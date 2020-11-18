@@ -1,3 +1,4 @@
+*.o
 .idea
 .deps
 src/bin/.deps
