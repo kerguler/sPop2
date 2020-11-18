@@ -1,0 +1,5 @@
+sPop2: an age-structured population dynamics model
+==================================================
+
+This is the standalone C library of the age structured population dynamics model sPop2.
+This version implements both hazard-based and accumulative processes in development and survival.

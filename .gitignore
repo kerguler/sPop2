@@ -1,3 +1,9 @@
+.idea
+.deps
+src/bin/.deps
+src/lib/.deps
+tutorial_Autotools*
+
 # http://www.gnu.org/software/automake
 
 Makefile.in
@@ -20,7 +26,7 @@ autom4te.cache
 /config.status
 /config.sub
 /configure
-/configure.scan
+/configure.ac
 /depcomp
 /install-sh
 /missing

@@ -1,0 +1,14 @@
+News
+====
+
+2.0.0
+------
+
+* Release date: UNRELEASED*
+
+* This is the initial draft of sPop v.2 with accumulative development (sPop2: C)
+  This package is derived from the C implementation of the sPop model
+  previously residing in the albopictus package of Python.
+  For more information:
+   - https://pypi.org/project/albopictus/
+   - https://f1000research.com/articles/7-1220/v3
