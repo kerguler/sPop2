@@ -6,8 +6,7 @@ AM_CFLAGS += $(GLIB_CFLAGS)
 libspop2_adir = $(prefix)/spop2
 
 # The libraries to build
-instdir = $(prefix)/spop2
-inst_LIBRARIES = libspop2.a
+pkglib_LIBRARIES = libspop2.a
 
 # The files to add to the library and to the source distribution
 libspop2_a_HEADERS = gamma.h ran_gen.h uthash.h spop2.h
