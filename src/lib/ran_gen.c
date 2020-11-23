@@ -12,6 +12,10 @@ gsl_rng *RAND_GSL;
 
 char *label;
 
+gsl_rng *get_RAND_GSL(void) {
+    return RAND_GSL;
+}
+
 void rng_setup(char *lab)
 //Can also run like:
 //GSL_RNG_TYPE="taus" GSL_RNG_SEED=123 ./GDirect

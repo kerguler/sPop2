@@ -27,10 +27,10 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 */
 // ---
 
-extern gsl_rng *RAND_GSL;
-
 double DPOP_EPS      = DBL_MIN;
 double DPOP_MAX_DAYS = 1000000;
+
+gsl_rng *RAND_GSL;
 
 void set_DPOP_EPS(double eps) {
     DPOP_EPS = eps;
@@ -46,6 +46,7 @@ spop spop_init(unsigned char stochastic, unsigned char gamma_mode) {
   pop->ncat = 0;
   pop->cat = 0;
   if (stochastic) {
+    RAND_GSL = get_RAND_GSL();
     pop->size.i = 0;
     pop->dead.i = 0;
     pop->developed.i = 0;
