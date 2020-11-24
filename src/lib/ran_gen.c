@@ -8,12 +8,12 @@
 
 //Random number variables
 const gsl_rng_type *R_TYPE;
-gsl_rng *RAND_GSL;
+gsl_rng *_RAND_GSL;
 
 char *label;
 
 gsl_rng *get_RAND_GSL(void) {
-    return RAND_GSL;
+    return _RAND_GSL;
 }
 
 void rng_setup(char *lab)
@@ -35,8 +35,8 @@ void rng_setup(char *lab)
   gsl_rng_env_setup();
 
   R_TYPE = gsl_rng_mt19937;
-  RAND_GSL = gsl_rng_alloc(R_TYPE);
-  gsl_rng_set(RAND_GSL,i);
+  _RAND_GSL = gsl_rng_alloc(R_TYPE);
+  gsl_rng_set(_RAND_GSL,i);
 }
 
 void rng_setup_seed(unsigned int seed, char *lab)
@@ -49,19 +49,19 @@ void rng_setup_seed(unsigned int seed, char *lab)
   gsl_rng_env_setup();
 
   R_TYPE = gsl_rng_mt19937;
-  RAND_GSL = gsl_rng_alloc(R_TYPE);
-  gsl_rng_set(RAND_GSL,seed);
+  _RAND_GSL = gsl_rng_alloc(R_TYPE);
+  gsl_rng_set(_RAND_GSL,seed);
 }
 
 void rng_destroy()
 {
-  gsl_rng_free(RAND_GSL);
+  gsl_rng_free(_RAND_GSL);
 
   fprintf(stderr,"RNG %s destroyed\n",label);
 }
 
 double rng_exponential(const double mu)
 {
-  double u = gsl_rng_uniform(RAND_GSL);
+  double u = gsl_rng_uniform(_RAND_GSL);
   return -(1.0 / mu) * (u == 0.0 ? 0.0 : log (u));
 }
