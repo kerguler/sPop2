@@ -6,8 +6,7 @@
 #include <gsl/gsl_cdf.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include "ran_gen.h"
-#include "accp.h"
+#include "spop2.h"
 
 gsl_rng *RANDOM;
 

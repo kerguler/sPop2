@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include "ran_gen.h"
+#include "spop2.h"
 
 //Random number variables
 const gsl_rng_type *R_TYPE;

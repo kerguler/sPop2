@@ -9,7 +9,7 @@ libspop2_ladir = $(prefix)/spop2
 lib_LTLIBRARIES =  libspop2.la
 
 # The files to add to the library and to the source distribution
-libspop2_la_HEADERS = gamma.h ran_gen.h uthash.h accp.h spop2.h
+libspop2_la_HEADERS = uthash.h spop2.h
 
 libspop2_la_SOURCES = \
 	                 $(libspop2_la_HEADERS) \

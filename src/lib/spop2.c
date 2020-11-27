@@ -6,8 +6,6 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_cdf.h>
-#include "ran_gen.h"
-#include "gamma.h"
 #include "spop2.h"
 
 // Memory monitoring
@@ -40,7 +38,19 @@ void set_DPOP_MAX_DAYS(unsigned int days) {
     DPOP_MAX_DAYS = days;
 }
 
-spop spop_init(unsigned char stochastic, unsigned char gamma_mode) {
+/*
+ * Initialisation routine for an age-structured sPop2 population
+ *  stochastic:   logical indicator for a stochastic or a deterministic setup
+ *                0: deterministic
+ *                1: stochastic
+ *  gamma_mode:   selection of probability distributions/methods for the method of hazards
+ *                MODE_GAMMA_RAW
+ *                MODE_GAMMA_HASH
+ *                MODE_NBINOM_RAW
+ *                this is to be extended for the method of accumulation
+ *  accumulative: logical indicator for an accumulative development process
+ */
+spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
   spop pop = (spop)malloc(sizeof(struct population_st));
   pop->individuals = 0;
   pop->ncat = 0;
@@ -58,6 +68,7 @@ spop spop_init(unsigned char stochastic, unsigned char gamma_mode) {
   pop->devtable = 0;
   pop->gamma_mode = gamma_mode;
   pop->stochastic = stochastic;
+  pop->accumulative = accumulative;
   return pop;
 }
 
@@ -369,7 +380,7 @@ char spop_iterate(spop  s,
   if (s->devtable) {
     spop_empty((spop)(s->devtable));
   } else {
-    s->devtable = (void *)spop_init(s->stochastic,s->gamma_mode);
+    s->devtable = (void *)spop_init(s->stochastic,s->gamma_mode, s->accumulative);
   }
   //
   prob_func calc_prob_death;

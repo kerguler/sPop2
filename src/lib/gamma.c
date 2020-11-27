@@ -9,7 +9,7 @@
 #include <gsl/gsl_cdf.h>
 #include <gsl/gsl_randist.h>
 #include "uthash.h"
-#include "gamma.h"
+#include "spop2.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
