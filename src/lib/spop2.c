@@ -47,7 +47,10 @@ void set_DPOP_MAX_DAYS(unsigned int days) {
  *                MODE_GAMMA_RAW
  *                MODE_GAMMA_HASH
  *                MODE_NBINOM_RAW
- *                this is to be extended for the method of accumulation
+ *                MODE_ACCP_ERLANG (MODE_GAMMA_HASH)
+ *                MODE_ACCP_FIXED  (MODE_GAMMA_HASH)
+ *                MODE_ACCP_PASCAL (MODE_NBINOM_RAW)
+ *                MODE_ACCP_GAMMA  (MODE_GAMMA_HASH) *under construction
  *  accumulative: logical indicator for an accumulative development process
  */
 spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
@@ -69,11 +72,35 @@ spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char
   pop->gamma_mode = gamma_mode;
   pop->stochastic = stochastic;
   pop->accumulative = accumulative;
+  switch (pop->gamma_mode) {
+      case MODE_ACCP_ERLANG:
+          if (!(pop->accumulative)) return 0;
+          pop->gamma_mode = MODE_GAMMA_HASH;
+          break;
+      case MODE_ACCP_FIXED:
+          if (!(pop->accumulative)) return 0;
+          pop->gamma_mode = MODE_GAMMA_HASH;
+          break;
+      case MODE_ACCP_PASCAL:
+          if (!(pop->accumulative)) return 0;
+          pop->gamma_mode = MODE_NBINOM_RAW;
+          break;
+      case MODE_ACCP_GAMMA:
+          if (!(pop->accumulative)) return 0;
+          pop->gamma_mode = MODE_GAMMA_HASH;
+          break;
+      default:
+          break;
+  }
   return pop;
 }
 
 void spop_empty(spop s) {
   if (s->individuals) {
+    if (s->individuals->accumulate) {
+        accp_destroy(&(s->individuals->accumulate));
+        s->individuals->accumulate = 0;
+    }
     free(s->individuals);
     s->individuals = 0;
   }
@@ -101,33 +128,39 @@ void spop_destroy(spop *s) {
 }
 
 void spop_print(spop s) {
-  if (!s) return;
-  unsigned int count;
-  printf("/------------------>\nGamma mode: %d\nPropulation type: ",s->gamma_mode);
-  if (s->stochastic) {
-    printf("Stochastic\nPopulation size: %d\nDead: %d\nDeveloped: %d\nAge\t#Cycle\tDev.\tNumber\n",
-           s->size.i,
-           s->dead.i,
-           s->developed.i);
-    for (count=0; count < s->cat; count++)
-      printf("%d\t%d\t%d\t%d\n",
-             s->individuals[count].age,
-             s->individuals[count].devcycle,
-             s->individuals[count].development,
-             s->individuals[count].number.i);
-  } else {
-    printf("Deterministic\nPopulation size: %g\nDead: %g\nDeveloped: %g\nAge\t#Cycle\tDev.\tNumber\n",
-           s->size.d,
-           s->dead.d,
-           s->developed.d);
-    for (count=0; count < s->cat; count++)
-      printf("%d\t%d\t%d\t%g\n",
-             s->individuals[count].age,
-             s->individuals[count].devcycle,
-             s->individuals[count].development,
-             s->individuals[count].number.d);
-  }
-  printf("Number of categories: %d\nOccupied categories: %d\n\\------------------>\n",s->ncat,s->cat);
+    if (!s) return;
+    unsigned int count;
+    printf("/------------------>\nGamma mode: %d\nPropulation type: ", s->gamma_mode);
+    if (s->stochastic) {
+        printf("Stochastic\nPopulation size: %d\nDead: %d\nDeveloped: %d\nAge\t#Cycle\tDev.\tNumber\n",
+               s->size.i,
+               s->dead.i,
+               s->developed.i);
+        for (count = 0; count < s->cat; count++) {
+            printf("%d\t%d\t%d\t%d\n",
+                   s->individuals[count].age,
+                   s->individuals[count].devcycle,
+                   s->individuals[count].development,
+                   s->individuals[count].number.i);
+            if (s->individuals[count].accumulate)
+                accp_print(s->individuals[count].accumulate);
+        }
+    } else {
+        printf("Deterministic\nPopulation size: %g\nDead: %g\nDeveloped: %g\nAge\t#Cycle\tDev.\tNumber\n",
+               s->size.d,
+               s->dead.d,
+               s->developed.d);
+        for (count = 0; count < s->cat; count++) {
+            printf("%d\t%d\t%d\t%g\n",
+                   s->individuals[count].age,
+                   s->individuals[count].devcycle,
+                   s->individuals[count].development,
+                   s->individuals[count].number.d);
+            if (s->individuals[count].accumulate)
+                accp_print(s->individuals[count].accumulate);
+        }
+    }
+    printf("Number of categories: %d\nOccupied categories: %d\n\\------------------>\n", s->ncat, s->cat);
 }
 
 void spop_print_to_csv(spop s) {
@@ -154,9 +187,9 @@ void spop_print_to_csv(spop s) {
 
 void swap(spop s, individual_data *from, individual_data *to) {
   individual_data tmp;
-  tmp.age = (*to).age; tmp.devcycle = (*to).devcycle; tmp.development = (*to).development;
-  (*to).age = (*from).age; (*to).devcycle = (*from).devcycle; (*to).development = (*from).development;
-  (*from).age = tmp.age; (*from).devcycle = tmp.devcycle; (*from).development = tmp.development;
+  tmp.age = (*to).age; tmp.devcycle = (*to).devcycle; tmp.development = (*to).development; tmp.accumulate = (*to).accumulate;
+  (*to).age = (*from).age; (*to).devcycle = (*from).devcycle; (*to).development = (*from).development; (*to).accumulate = (*from).accumulate;
+  (*from).age = tmp.age; (*from).devcycle = tmp.devcycle; (*from).development = tmp.development; (*from).accumulate = tmp.accumulate;
   if (s->stochastic) {
     tmp.number.i = (*to).number.i;
     (*to).number.i = (*from).number.i;

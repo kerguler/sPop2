@@ -65,17 +65,17 @@ accp accp_init(unsigned char stochastic, unsigned char pdist) {
   pop->stochastic = stochastic;
   pop->pdist = pdist;
   switch (pop->pdist) {
-  case ERLANG:
+  case MODE_ACCP_ERLANG:
     pop->cfun = fun_pois_C;
   break;
-  case FIXED:
+  case MODE_ACCP_FIXED:
     pop->stochastic = 0;
     pop->cfun = fun_fixed_C;
   break;
-  case PASCAL:
+  case MODE_ACCP_PASCAL:
     pop->cfun = fun_unif_C;
   break;
-  case GAMMA:
+  case MODE_ACCP_GAMMA:
     pop->cfun = fun_cpois_C;
   break;
   default:
@@ -304,17 +304,17 @@ char accp_iterate(accp pop,
   double gamma_k = 0.0,
          gamma_theta = 0.0;
   switch (pop->pdist) {
-  case ERLANG:
+  case MODE_ACCP_ERLANG:
     gamma_theta = dev_sd * dev_sd / dev_mean;
     gamma_k = dev_mean / gamma_theta;
     if (gamma_k != round(gamma_k)) {
       gamma_k = round(gamma_k);
       double m = gamma_k * gamma_theta;
       double s = sqrt(gamma_theta * m);
-      printf("For the Erlang distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
+      printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
     }
   break;
-  case GAMMA:
+  case MODE_ACCP_GAMMA:
     gamma_theta = dev_sd * dev_sd / dev_mean;
     gamma_k = dev_mean / gamma_theta;
     // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
@@ -322,14 +322,14 @@ char accp_iterate(accp pop,
       gamma_k = round(gamma_k);
       double m = gamma_k * gamma_theta;
       double s = sqrt(gamma_theta * m);
-      printf("For the Erlang distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
+      printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
     }
   break;
-  case FIXED:
+  case MODE_ACCP_FIXED:
     gamma_k = round(dev_mean);
     gamma_theta = 1.0 / gamma_k; // This is not used.
   break;
-  case PASCAL:
+  case MODE_ACCP_PASCAL:
     gamma_theta = dev_mean / (dev_sd * dev_sd);
     if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
       printf("The negative binomial cannot yield mean=%g and sd=%g\n",dev_mean,dev_sd);
@@ -341,7 +341,7 @@ char accp_iterate(accp pop,
       gamma_k = round(gamma_k);
       double m = gamma_k * (1.0-gamma_theta) / gamma_theta;
       double s = sqrt(dev_mean / gamma_theta);
-      printf("For the Erlang distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
+      printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",m,s);
     }
     // printf("p=%g, r=%g\n",gamma_theta,gamma_k);
   break;

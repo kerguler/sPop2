@@ -49,10 +49,10 @@ struct accumulative_st {
     pfunc cfun;
 };
 
-#define ERLANG 0
-#define FIXED  1
-#define PASCAL 2
-#define GAMMA  3
+#define MODE_ACCP_ERLANG 0
+#define MODE_ACCP_FIXED  1
+#define MODE_ACCP_PASCAL 2
+#define MODE_ACCP_GAMMA  3
 
 /* ******************************* */
 
