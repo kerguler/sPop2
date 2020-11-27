@@ -3,8 +3,8 @@
 
 #include <float.h>
 
-double DPOP_EPS;
-double DPOP_MAX_DAYS;
+// double DPOP_EPS;
+// double DPOP_MAX_DAYS;
 
 #define is_greater(s,p) (((s).age > (p).age) || ((s).age == (p).age && (s).devcycle > (p).devcycle) || ((s).age == (p).age && (s).devcycle == (p).devcycle && (s).development > (p).development))
 #define is_smaller(s,p) (((s).age < (p).age) || ((s).age == (p).age && (s).devcycle < (p).devcycle) || ((s).age == (p).age && (s).devcycle == (p).devcycle && (s).development < (p).development))
