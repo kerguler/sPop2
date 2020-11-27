@@ -49,10 +49,17 @@ struct accumulative_st {
     pfunc cfun;
 };
 
-#define MODE_ACCP_ERLANG 0
-#define MODE_ACCP_FIXED  1
-#define MODE_ACCP_PASCAL 2
-#define MODE_ACCP_GAMMA  3
+
+#define MODE_GAMMA_RAW    0
+#define MODE_GAMMA_HASH   1
+#define MODE_NBINOM_RAW   2
+#define MODE_GAMMA_MATRIX 3
+#define MODE_BINOM_RAW    4
+
+#define MODE_ACCP_ERLANG  5
+#define MODE_ACCP_FIXED   6
+#define MODE_ACCP_PASCAL  7
+#define MODE_ACCP_GAMMA   8
 
 /* ******************************* */
 
@@ -116,12 +123,6 @@ double rng_exponential(const double);
 
 #define EPS 1e-14
 
-#define MODE_GAMMA_RAW    0
-#define MODE_GAMMA_HASH   1
-#define MODE_NBINOM_RAW   2
-#define MODE_GAMMA_MATRIX 3
-#define MODE_BINOM_RAW    4
-
 #define n_MAX 400.0
 #define n_STEP 1.0
 #define n_i_MAX 400
@@ -152,13 +153,13 @@ char choose(unsigned int, double *, unsigned int, unsigned int *);
 accp accp_init(unsigned char, unsigned char);
 char accp_empty(accp);
 char accp_destroy(accp *);
-#define accp_add(pop,stage,size) {    \
-    sdnum tmp;                        \
-    if ((pop)->stochastic)            \
-      tmp.i = (unsigned int)(size);   \
-    else                              \
-      tmp.d = (double)(size);         \
-    accp_sdadd((pop),(stage),(tmp));  \
+#define accp_add(pop,stage,size) {             \
+    sdnum accp_var_tmp;                        \
+    if ((pop)->stochastic)                     \
+      accp_var_tmp.i = (unsigned int)(size);   \
+    else                                       \
+      accp_var_tmp.d = (double)(size);         \
+    accp_sdadd((pop),(stage),(accp_var_tmp));  \
   }
 char accp_sdadd(accp,unsigned int,sdnum);
 void accp_print(accp);
@@ -179,15 +180,15 @@ void spop_print_to_csv(spop);
 
 void swap(spop, individual_data *, individual_data *);
 
-#define spop_add(s,age,devcycle,development,number) {   \
-    sdnum tmp;                                          \
-    if ((s)->stochastic)                                \
-      tmp.i = (int)(number);                            \
-    else                                                \
-      tmp.d = (double)(number);                            \
-    spop_sdadd((s),(age),(devcycle),(development),tmp);    \
+#define spop_add(s,age,devcycle,development,stage,number) {                 \
+    sdnum spop_var_tmp;                                                     \
+    if ((s)->stochastic)                                                    \
+      spop_var_tmp.i = (int)(number);                                       \
+    else                                                                    \
+      spop_var_tmp.d = (double)(number);                                    \
+    spop_sdadd((s),(age),(devcycle),(development),(stage),spop_var_tmp);    \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, sdnum);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, unsigned int, sdnum);
 
 void spop_popadd(spop, spop);
 
