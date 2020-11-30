@@ -209,7 +209,7 @@ int search(individual_data *arr, int l, int r, individual_data *x) {
   return -1;
 }
 
-void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, unsigned int stage, sdnum number) {
+void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, accp dev, sdnum number) {
   if (s->stochastic) {
     if (number.i <= 0) return;
   } else {
@@ -220,12 +220,10 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
   tmp.age = age;
   tmp.devcycle = devcycle;
   tmp.development = development;
-  if (s->accumulative) {
-      tmp.accumulate = accp_init(s->stochastic,s->gamma_mode);
-      accp_sdadd(tmp.accumulate,stage,number);
-  } else {
+  if (s->accumulative)
+      tmp.accumulate = dev;
+  else
       tmp.accumulate = 0;
-  }
   tmp.number = number;
   //
   int cat = -1;
@@ -297,7 +295,7 @@ void spop_popadd(spop s, spop d) {
     spop_sdadd(s,d->individuals[i].age,
                d->individuals[i].devcycle,
                d->individuals[i].development,
-               0, // Note: Find a way to transfer also the accumulative development vector
+               d->individuals[i].accumulate,
                d->individuals[i].number);
 }
 
@@ -536,7 +534,7 @@ char spop_iterate(spop  s,
                            tmpn->age,
                            pause ? tmpn->devcycle : tmpn->devcycle + 1,
                            pause ? tmpn->development : 0,
-                           0, // Note: Find a way to transfer also the accumulative development vector
+                           tmpn->accumulate,
                            k);
             }
         }

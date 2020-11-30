@@ -159,7 +159,7 @@ char accp_destroy(accp *);
       accp_var_tmp.i = (unsigned int)(size);   \
     else                                       \
       accp_var_tmp.d = (double)(size);         \
-    accp_sdadd((pop),(stage),(accp_var_tmp));  \
+    accp_sdadd((pop),(stage),accp_var_tmp);    \
   }
 char accp_sdadd(accp, unsigned int, sdnum);
 void accp_print(accp);
@@ -181,15 +181,20 @@ void spop_print_to_csv(spop);
 
 void swap(spop, individual_data *, individual_data *);
 
-#define spop_add(s,age,devcycle,development,stage,number) {                 \
-    sdnum spop_var_tmp;                                                     \
-    if ((s)->stochastic)                                                    \
-      spop_var_tmp.i = (int)(number);                                       \
-    else                                                                    \
-      spop_var_tmp.d = (double)(number);                                    \
-    spop_sdadd((s),(age),(devcycle),(development),(stage),spop_var_tmp);    \
+#define spop_add(s,age,devcycle,development,stage,number) {               \
+    sdnum spop_var_tmp;                                                   \
+    if ((s)->stochastic)                                                  \
+      spop_var_tmp.i = (int)(number);                                     \
+    else                                                                  \
+      spop_var_tmp.d = (double)(number);                                  \
+    accp dev = 0;                                                         \
+    if ((s)->accumulative) {                                              \
+       dev = accp_init((s)->stochastic,(s)->gamma_mode);                  \
+       accp_sdadd(dev,(stage),spop_var_tmp);                                  \
+    }                                                                     \
+    spop_sdadd((s),(age),(devcycle),(development),dev,spop_var_tmp);      \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, unsigned int, sdnum);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, accp, sdnum);
 
 void spop_popadd(spop, spop);
 
