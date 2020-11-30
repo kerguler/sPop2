@@ -409,8 +409,14 @@ void spop_removeitem(spop s, unsigned int *i, char *remove) {
     (*i)--;
     //
     if (s->ncat > 1 && s->cat < (s->ncat >> 1)) { // Shrink buffer
-      s->ncat = (s->ncat >> 1) - 1;
-      s->individuals = (individual_data *)realloc(s->individuals, s->ncat * sizeof(individual_data));
+        unsigned int tmp = (s->ncat >> 1) - 1;
+        if (s->accumulative) {
+            for (j = tmp; j < s->ncat; j++)
+                if (s->individuals[j].accumulate)
+                    accp_destroy(&(s->individuals[j].accumulate));
+        }
+        s->ncat = tmp;
+        s->individuals = (individual_data *)realloc(s->individuals, s->ncat * sizeof(individual_data));
     }
     //
     if ((s->stochastic && s->size.i == 0) || (!(s->stochastic) && s->size.d <= DPOP_EPS))
@@ -430,80 +436,101 @@ char spop_iterate(spop  s,
                   double death_sd,       // sd time of death
                   iter_func death_fun,   //
                   unsigned char pause) { // pause aging and development for the iteration
-  if (s->stochastic) {
-    s->dead.i = 0;
-    s->developed.i = 0;
-  } else {
-    s->dead.d = 0.0;
-    s->developed.d = 0.0;
-  }
-  if (s->devtable) {
-    spop_empty((spop)(s->devtable));
-  } else {
-    s->devtable = (void *)spop_init(s->stochastic,s->gamma_mode, s->accumulative);
-  }
-  //
-  prob_func calc_prob_death;
-  prob_func calc_prob_dev;
-  //
-  char remove = -1;
-  sdnum k;
-  double prob;
-  individual_data *tmpn;
-  unsigned int i;
-  for (i=0; i<s->cat; i++) {
-    tmpn = &(s->individuals[i]);
-    //
-    if (dev_fun)
-      dev_fun(tmpn,&dev_prob,&dev_mean,&dev_sd);
-    if (death_fun)
-      death_fun(tmpn,&death_prob,&death_mean,&death_sd);
-    calc_prob_death = assign_prob_func(s, death_prob, death_mean, death_sd);
-    calc_prob_dev = assign_prob_func(s, dev_prob, dev_mean, dev_sd);
-    //
-    if (!calc_prob_death || !calc_prob_dev)
-      return 1;
-    // Death
-    prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
-    remove = calc_spop(s, tmpn, prob, &k);
-    if (s->stochastic)
-      s->dead.i += k.i;
-    else
-      s->dead.d += k.d;
-    //
-    if (remove == 0) {
-      // Develop
-      prob = calc_prob_dev(tmpn->development, dev_prob, dev_mean, dev_sd);
-      remove = calc_spop(s, tmpn, prob, &k);
-      //
-      if (!pause) {
-        tmpn->age += 1;
-        tmpn->development += 1;
-      }
-      if (s->stochastic)
-        s->developed.i += k.i;
-      else
-        s->developed.d += k.d;
-      //
-      if (tmpn->age >= DPOP_MAX_DAYS || tmpn->development >= DPOP_MAX_DAYS) {
-        printf("ERROR: Development time is too high!\n");
-        spop_print(s);
-        s->developed.d = NAN;
-        return 1;
-      }
-      //
-      if ((s->stochastic && k.i > 0) || (!(s->stochastic) && k.d >= DPOP_EPS)) {
-        spop_sdadd((spop)(s->devtable),
-                   tmpn->age,
-                   pause ? tmpn->devcycle : tmpn->devcycle + 1,
-                   pause ? tmpn->development : 0,
-                   0, // Note: Find a way to transfer also the accumulative development vector
-                   k);
-      }
+    if (s->stochastic) {
+        s->dead.i = 0;
+        s->developed.i = 0;
+    } else {
+        s->dead.d = 0.0;
+        s->developed.d = 0.0;
+    }
+    if (s->devtable) {
+        spop_empty((spop) (s->devtable));
+    } else {
+        s->devtable = (void *) spop_init(s->stochastic, s->gamma_mode, s->accumulative);
     }
     //
-    spop_removeitem(s,&i,&remove);
-  }
-  return 0;
+    prob_func calc_prob_death;
+    prob_func calc_prob_dev;
+    //
+    char remove = -1;
+    sdnum k;
+    double prob;
+    individual_data *tmpn;
+    unsigned int i;
+    for (i = 0; i < s->cat; i++) {
+        tmpn = &(s->individuals[i]);
+        //
+        if (death_fun)
+            death_fun(tmpn, &death_prob, &death_mean, &death_sd);
+        calc_prob_death = assign_prob_func(s, death_prob, death_mean, death_sd);
+        if (!calc_prob_death)
+            return 1;
+        // Death
+        prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
+        if (s->accumulative) {
+            if (accp_survive(tmpn->accumulate, prob, &k)) return 1;
+            if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
+                (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS))
+                remove = 1;
+        } else
+            remove = calc_spop(s, tmpn, prob, &k);
+        if (s->stochastic) {
+            s->dead.i += k.i;
+            s->size.i -= k.i;
+        } else {
+            s->dead.d += k.d;
+            s->size.d -= k.d;
+        }
+        //
+        if (remove == 0) {
+            if (s->accumulative) {
+                if (accp_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
+                k = tmpn->accumulate->completed;
+                if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
+                    (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS))
+                    remove = 1;
+            } else {
+                if (dev_fun)
+                    dev_fun(tmpn, &dev_prob, &dev_mean, &dev_sd);
+                calc_prob_dev = assign_prob_func(s, dev_prob, dev_mean, dev_sd);
+                if (!calc_prob_dev)
+                    return 1;
+                // Develop
+                prob = calc_prob_dev(tmpn->development, dev_prob, dev_mean, dev_sd);
+                remove = calc_spop(s, tmpn, prob, &k);
+            }
+            //
+            if (!pause) {
+                tmpn->age += 1;
+                tmpn->development += 1;
+            }
+            if (s->stochastic) {
+                s->developed.i += k.i;
+                s->size.i -= k.i;
+            } else {
+                s->developed.d += k.d;
+                s->size.d -= k.d;
+            }
+            //
+            if (tmpn->age >= DPOP_MAX_DAYS || tmpn->development >= DPOP_MAX_DAYS) {
+                printf("ERROR: Development time is too high!\n");
+                spop_print(s);
+                s->developed.d = NAN;
+                return 1;
+            }
+            //
+            if ((s->stochastic && k.i > 0) || (!(s->stochastic) && k.d >= DPOP_EPS)) {
+                spop_sdadd((spop) (s->devtable),
+                           tmpn->age,
+                           pause ? tmpn->devcycle : tmpn->devcycle + 1,
+                           pause ? tmpn->development : 0,
+                           0, // Note: Find a way to transfer also the accumulative development vector
+                           k);
+            }
+        }
+        //
+        spop_removeitem(s, &i, &remove);
+    }
+    return 0;
 }
 

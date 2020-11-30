@@ -366,3 +366,32 @@ char accp_iterate(accp pop,
   //
   return 0;
 }
+
+char accp_survive(accp pop,
+                  double prob,
+                  sdnum *ret) {
+    ret->i = 0;
+    ret->d = 0.0;
+    pop->completed.i = 0;
+    pop->completed.d = 0.0;
+    sdnum item;
+    chain tmp;
+    for (tmp=pop->first; tmp; tmp=tmp->next) {
+        if (pop->stochastic) {
+            if (!(tmp->size.i)) continue;
+            item.i = gsl_ran_binomial(RANDOM,
+                                      prob,
+                                      tmp->size.i);
+            tmp->size.i -= item.i;
+            pop->size.i -= item.i;
+            ret->i += item.i;
+        } else {
+            if (!(tmp->size.d)) continue;
+            item.d = tmp->size.d * prob;
+            tmp->size.d -= item.d;
+            pop->size.d -= item.d;
+            ret->d += item.d;
+        }
+    }
+    return 0;
+}

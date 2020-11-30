@@ -161,11 +161,12 @@ char accp_destroy(accp *);
       accp_var_tmp.d = (double)(size);         \
     accp_sdadd((pop),(stage),(accp_var_tmp));  \
   }
-char accp_sdadd(accp,unsigned int,sdnum);
+char accp_sdadd(accp, unsigned int, sdnum);
 void accp_print(accp);
 sdnum accp_get_size(accp);
 char chain_resize(accp, unsigned int);
 char accp_iterate(accp, double, double);
+char accp_survive(accp, double, sdnum *);
 
 /* ******************************* */
 
