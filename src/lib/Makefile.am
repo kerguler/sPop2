@@ -19,3 +19,4 @@ libspop2_la_SOURCES = \
 					 spop2.c
 
 libspop2_la_LIBADD = $(GLIB_LIBS)
+libspop2_la_LDFLAGS = -module -avoid-version -shared

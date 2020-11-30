@@ -5,13 +5,13 @@
 # It is necessary for linking the library.
 
 # The name that we can dlopen(3).
-dlname='libspop2.0.dylib'
+dlname='libspop2.so'
 
 # Names of this library.
-library_names='libspop2.0.dylib libspop2.dylib'
+library_names='libspop2.so libspop2.so'
 
 # The name of the static archive.
-old_library='libspop2.a'
+old_library=''
 
 # Linker flags that cannot go in dependency_libs.
 inherited_linker_flags=' '
@@ -31,7 +31,7 @@ revision=0
 installed=yes
 
 # Should we warn about portability when linking against -modules?
-shouldnotlink=no
+shouldnotlink=yes
 
 # Files to dlopen/dlpreopen
 dlopen=''
