@@ -275,8 +275,9 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
               dst->size.d += src->size.d;
           }
       }
+      s->individuals[cat].accumulate->size = tmp.number;
   }
-  // Note: chain size should already be incorporated into tmo.number
+  // Note: chain size should already be incorporated into tmp.number
   //
   if (s->stochastic) {
     s->individuals[cat].number.i += tmp.number.i;
@@ -452,7 +453,7 @@ char spop_iterate(spop  s,
     prob_func calc_prob_death;
     prob_func calc_prob_dev;
     //
-    char remove = -1;
+    char remove = 0;
     sdnum k;
     double prob;
     individual_data *tmpn;
@@ -463,23 +464,29 @@ char spop_iterate(spop  s,
         if (death_fun)
             death_fun(tmpn, &death_prob, &death_mean, &death_sd);
         calc_prob_death = assign_prob_func(s, death_prob, death_mean, death_sd);
-        if (!calc_prob_death)
-            return 1;
-        // Death
-        prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
-        if (s->accumulative) {
-            if (accp_survive(tmpn->accumulate, prob, &k)) return 1;
-            if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
-                (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS))
-                remove = 1;
-        } else
-            remove = calc_spop(s, tmpn, prob, &k);
-        if (s->stochastic) {
-            s->dead.i += k.i;
-            s->size.i -= k.i;
-        } else {
-            s->dead.d += k.d;
-            s->size.d -= k.d;
+        if (calc_prob_death) {
+            // Death
+            prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
+            if (s->accumulative) {
+                if (accp_survive(tmpn->accumulate, prob, &k)) return 1;
+                if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
+                    (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
+                    remove = 1;
+                }
+                if (s->stochastic) {
+                    s->dead.i += k.i;
+                    s->size.i -= k.i;
+                } else {
+                    s->dead.d += k.d;
+                    s->size.d -= k.d;
+                }
+            } else {
+                remove = calc_spop(s, tmpn, prob, &k);
+                if (s->stochastic)
+                    s->dead.i += k.i;
+                else
+                    s->dead.d += k.d;
+            }
         }
         //
         if (remove == 0) {
@@ -487,29 +494,34 @@ char spop_iterate(spop  s,
                 if (accp_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
                 k = tmpn->accumulate->completed;
                 if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
-                    (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS))
+                    (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
                     remove = 1;
+                }
+                if (s->stochastic) {
+                    s->developed.i += k.i;
+                    s->size.i -= k.i;
+                } else {
+                    s->developed.d += k.d;
+                    s->size.d -= k.d;
+                }
             } else {
                 if (dev_fun)
                     dev_fun(tmpn, &dev_prob, &dev_mean, &dev_sd);
                 calc_prob_dev = assign_prob_func(s, dev_prob, dev_mean, dev_sd);
-                if (!calc_prob_dev)
-                    return 1;
-                // Develop
-                prob = calc_prob_dev(tmpn->development, dev_prob, dev_mean, dev_sd);
-                remove = calc_spop(s, tmpn, prob, &k);
+                if (calc_prob_dev) {
+                    // Develop
+                    prob = calc_prob_dev(tmpn->development, dev_prob, dev_mean, dev_sd);
+                    remove = calc_spop(s, tmpn, prob, &k);
+                    if (s->stochastic)
+                        s->developed.i += k.i;
+                    else
+                        s->developed.d += k.d;
+                }
             }
             //
             if (!pause) {
                 tmpn->age += 1;
                 tmpn->development += 1;
-            }
-            if (s->stochastic) {
-                s->developed.i += k.i;
-                s->size.i -= k.i;
-            } else {
-                s->developed.d += k.d;
-                s->size.d -= k.d;
             }
             //
             if (tmpn->age >= DPOP_MAX_DAYS || tmpn->development >= DPOP_MAX_DAYS) {

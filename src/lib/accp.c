@@ -157,7 +157,7 @@ void accp_print(accp s) {
   if (!s) return;
   unsigned int count;
   chain tmp;
-  printf(">------------------>\n Propulation type: ");
+  printf(">------------------>\n Population type: ");
   if (s->stochastic) {
     printf("Stochastic\n Population size: %d\n Completed: %d\n Dev.stage\tNumber\n ---------\t------\n",
            s->size.i,
