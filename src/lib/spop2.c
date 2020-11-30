@@ -544,3 +544,33 @@ char spop_iterate(spop  s,
     return 0;
 }
 
+/*
+ * --------------------------------------
+ */
+
+unsigned int MAXPOPS = 10;
+spop *pop_list = 0;
+
+unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
+    pop_list = (spop *)calloc(MAXPOPS,sizeof(spop));
+    pop_list[0] = spop_init(stochastic,gamma_mode,accumulative);
+    return 0;
+}
+
+void spoplib_print(unsigned int id) {
+    if (pop_list[id])
+        spop_print(pop_list[id]);
+}
+
+void spoplib_destroy(unsigned int id) {
+    if (pop_list[id])
+        spop_destroy(&(pop_list[id]));
+    pop_list[id] = 0;
+}
+
+void spoplib_destroy_all() {
+    unsigned int i;
+    for (i=0; i<MAXPOPS; i++)
+        spoplib_destroy(i);
+    free(pop_list);
+}
