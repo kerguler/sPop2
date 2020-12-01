@@ -210,82 +210,82 @@ int search(individual_data *arr, int l, int r, individual_data *x) {
 }
 
 void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, accp dev, sdnum number) {
-  if (s->stochastic) {
-    if (number.i <= 0) return;
-  } else {
-    if (number.d <= DPOP_EPS) return;
-  }
-  //
-  individual_data tmp;
-  tmp.age = age;
-  tmp.devcycle = devcycle;
-  tmp.development = development;
-  if (s->accumulative)
-      tmp.accumulate = dev;
-  else
-      tmp.accumulate = 0;
-  tmp.number = number;
-  //
-  int cat = -1;
-  if (s->individuals && s->ncat && s->cat)
-    cat = search(s->individuals, 0, s->cat-1, &tmp);
-  if (cat == -1) { // Not found
-    if (s->cat >= s->ncat) { // Expand buffer
-      s->ncat = 2 * s->ncat + 1;
-      if (!(s->individuals)) {
-        s->individuals = (individual_data *)malloc(s->ncat * sizeof(individual_data));
-      } else {
-        s->individuals = (individual_data *)realloc(s->individuals, s->ncat * sizeof(individual_data));
-      }
-      unsigned int i;
-      for (i = s->cat; i < s->ncat; i++)  {
-        s->individuals[i].age = 0;
-        s->individuals[i].devcycle = 0;
-        s->individuals[i].development = 0;
-        if (s->accumulative) {
-            s->individuals[i].accumulate = accp_init(s->stochastic,s->gamma_mode);
-        } else {
-            s->individuals[i].accumulate = 0;
-        }
-        if (s->stochastic)
-          s->individuals[i].number.i = 0;
-        else
-          s->individuals[i].number.d = 0.0;
-      }
+    if (s->stochastic) {
+        if (number.i <= 0) return;
+    } else {
+        if (number.d <= DPOP_EPS) return;
     }
-    cat = s->cat;
-    s->cat += 1;
-  }
-  //
-  s->individuals[cat].age = tmp.age;
-  s->individuals[cat].devcycle = tmp.devcycle;
-  s->individuals[cat].development = tmp.development;
-  //
-  if (s->accumulative) {
-      if (s->individuals[cat].accumulate->cat < tmp.accumulate->cat)
-        chain_resize(s->individuals[cat].accumulate,tmp.accumulate->cat);
-      chain dst = s->individuals[cat].accumulate->first,
-            src = tmp.accumulate->first;
-      for ( ; src && dst; src = src->next, dst = dst->next) {
-          if (s->stochastic) {
-              dst->size.i += src->size.i;
-          } else {
-              dst->size.d += src->size.d;
-          }
-      }
-      s->individuals[cat].accumulate->size = tmp.number;
-  }
-  // Note: chain size should already be incorporated into tmp.number
-  //
-  if (s->stochastic) {
-    s->individuals[cat].number.i += tmp.number.i;
-    s->size.i += tmp.number.i;
-  } else {
-    s->individuals[cat].number.d += tmp.number.d;
-    s->size.d += tmp.number.d;
-  }
-  //
-  qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);
+    //
+    individual_data tmp;
+    tmp.age = age;
+    tmp.devcycle = devcycle;
+    tmp.development = development;
+    if (s->accumulative)
+        tmp.accumulate = dev;
+    else
+        tmp.accumulate = 0;
+    tmp.number = number;
+    //
+    int cat = -1;
+    if (s->individuals && s->ncat && s->cat)
+        cat = search(s->individuals, 0, s->cat - 1, &tmp);
+    if (cat == -1) { // Not found
+        if (s->cat >= s->ncat) { // Expand buffer
+            s->ncat = 2 * s->ncat + 1;
+            if (!(s->individuals)) {
+                s->individuals = (individual_data *) malloc(s->ncat * sizeof(individual_data));
+            } else {
+                s->individuals = (individual_data *) realloc(s->individuals, s->ncat * sizeof(individual_data));
+            }
+            unsigned int i;
+            for (i = s->cat; i < s->ncat; i++) {
+                s->individuals[i].age = 0;
+                s->individuals[i].devcycle = 0;
+                s->individuals[i].development = 0;
+                if (s->accumulative) {
+                    s->individuals[i].accumulate = accp_init(s->stochastic, s->gamma_mode);
+                } else {
+                    s->individuals[i].accumulate = 0;
+                }
+                if (s->stochastic)
+                    s->individuals[i].number.i = 0;
+                else
+                    s->individuals[i].number.d = 0.0;
+            }
+        }
+        cat = s->cat;
+        s->cat += 1;
+    }
+    //
+    s->individuals[cat].age = tmp.age;
+    s->individuals[cat].devcycle = tmp.devcycle;
+    s->individuals[cat].development = tmp.development;
+    //
+    if (s->accumulative) {
+        if (s->individuals[cat].accumulate->cat < tmp.accumulate->cat)
+            chain_resize(s->individuals[cat].accumulate, tmp.accumulate->cat);
+        chain dst = s->individuals[cat].accumulate->first,
+                src = tmp.accumulate->first;
+        for (; src && dst; src = src->next, dst = dst->next) {
+            if (s->stochastic) {
+                dst->size.i += src->size.i;
+            } else {
+                dst->size.d += src->size.d;
+            }
+        }
+        s->individuals[cat].accumulate->size = tmp.number;
+    }
+    // Note: chain size should already be incorporated into tmp.number
+    //
+    if (s->stochastic) {
+        s->individuals[cat].number.i += tmp.number.i;
+        s->size.i += tmp.number.i;
+    } else {
+        s->individuals[cat].number.d += tmp.number.d;
+        s->size.d += tmp.number.d;
+    }
+    //
+    qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);
 }
 
 void spop_popadd(spop s, spop d) {
@@ -472,9 +472,11 @@ char spop_iterate(spop  s,
                     remove = 1;
                 }
                 if (s->stochastic) {
+                    tmpn->number.i -= k.i;
                     s->dead.i += k.i;
                     s->size.i -= k.i;
                 } else {
+                    tmpn->number.d -= k.d;
                     s->dead.d += k.d;
                     s->size.d -= k.d;
                 }
@@ -496,9 +498,11 @@ char spop_iterate(spop  s,
                     remove = 1;
                 }
                 if (s->stochastic) {
+                    tmpn->number.i -= k.i;
                     s->developed.i += k.i;
                     s->size.i -= k.i;
                 } else {
+                    tmpn->number.d -= k.d;
                     s->developed.d += k.d;
                     s->size.d -= k.d;
                 }
@@ -548,13 +552,59 @@ char spop_iterate(spop  s,
  * --------------------------------------
  */
 
-unsigned int MAXPOPS = 10;
+char flag_RNG = 0;
+unsigned int MAXPOPS = 1;
 spop *pop_list = 0;
 
 unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
+    if (pop_list)
+        spoplib_destroy_all();
     pop_list = (spop *)calloc(MAXPOPS,sizeof(spop));
+    if (stochastic && !flag_RNG) {
+        rng_setup("Setting up GSL RNG in Python");
+        flag_RNG = 1;
+    }
     pop_list[0] = spop_init(stochastic,gamma_mode,accumulative);
     return 0;
+}
+
+void spoplib_add(unsigned int id, unsigned int age, unsigned int devcycle, unsigned int development, unsigned int stage, double number) {
+    if (pop_list[id])
+        spop_add(pop_list[id],age,devcycle,development,stage,number);
+}
+
+void spoplib_iterate(unsigned int id,
+                     double dev_prob,
+                     double dev_mean,
+                     double dev_sd,
+                     double death_prob,
+                     double death_mean,
+                     double death_sd) {
+    if (pop_list[id])
+        spop_iterate(pop_list[id],
+                     dev_prob,
+                     dev_mean,
+                     dev_sd,
+                     0,
+                     death_prob,
+                     death_mean,
+                     death_sd,
+                     0,
+                     0);
+}
+
+void spoplib_read(unsigned int id, double *size, double *developed, double *dead) {
+    if (pop_list[id]) {
+        if (pop_list[id]->stochastic) {
+            *size = (double)(pop_list[id]->size.i);
+            *developed = (double)(pop_list[id]->developed.i);
+            *dead = (double)(pop_list[id]->dead.i);
+        } else {
+            *size = pop_list[id]->size.d;
+            *developed = pop_list[id]->developed.d;
+            *dead = pop_list[id]->dead.d;
+        }
+    }
 }
 
 void spoplib_print(unsigned int id) {
@@ -573,4 +623,8 @@ void spoplib_destroy_all() {
     for (i=0; i<MAXPOPS; i++)
         spoplib_destroy(i);
     free(pop_list);
+    if (flag_RNG) {
+        rng_destroy();
+        flag_RNG = 0;
+    }
 }

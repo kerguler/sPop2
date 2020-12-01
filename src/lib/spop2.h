@@ -205,6 +205,9 @@ char spop_iterate(spop, double, double, double, iter_func, double, double, doubl
 /* ******************************* */
 
 unsigned int spoplib_init(unsigned char, unsigned char, unsigned char);
+void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, double);
+void spoplib_iterate(unsigned int, double, double, double, double, double, double);
+void spoplib_read(unsigned int, double *, double *, double *);
 void spoplib_print(unsigned int);
 void spoplib_destroy(unsigned int);
 void spoplib_destroy_all(void);
