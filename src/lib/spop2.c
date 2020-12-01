@@ -552,7 +552,10 @@ char spop_iterate(spop  s,
  * --------------------------------------
  */
 
-char flag_RNG = 0;
+/*
+ * WARNING: Do not forget to initiate RAND_GSL from Python for stochastic simulations!
+ */
+
 unsigned int MAXPOPS = 1;
 spop *pop_list = 0;
 
@@ -560,10 +563,6 @@ unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode, un
     if (pop_list)
         spoplib_destroy_all();
     pop_list = (spop *)calloc(MAXPOPS,sizeof(spop));
-    if (stochastic && !flag_RNG) {
-        rng_setup("Setting up GSL RNG in Python");
-        flag_RNG = 1;
-    }
     pop_list[0] = spop_init(stochastic,gamma_mode,accumulative);
     return 0;
 }
@@ -623,8 +622,4 @@ void spoplib_destroy_all() {
     for (i=0; i<MAXPOPS; i++)
         spoplib_destroy(i);
     free(pop_list);
-    if (flag_RNG) {
-        rng_destroy();
-        flag_RNG = 0;
-    }
 }
