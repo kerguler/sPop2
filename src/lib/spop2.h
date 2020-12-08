@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include "uthash.h"
 
 #define is_greater(s,p) (((s).age > (p).age) || ((s).age == (p).age && (s).devcycle > (p).devcycle) || ((s).age == (p).age && (s).devcycle == (p).devcycle && (s).development > (p).development))
 #define is_smaller(s,p) (((s).age < (p).age) || ((s).age == (p).age && (s).devcycle < (p).devcycle) || ((s).age == (p).age && (s).devcycle == (p).devcycle && (s).development < (p).development))
@@ -27,28 +28,25 @@ typedef union {
 
 /* ******************************* */
 
-typedef struct stage_st *chain;
-typedef struct accumulative_st *accp;
+typedef struct qunit_st *qunit;
+typedef struct quant_st *quant;
 
-struct stage_st {
+struct qunit_st {
+    double dev;
     sdnum size;
-    chain prev;
-    chain next;
+    UT_hash_handle hh;
 };
 
 typedef double (*pfunc)(double, double);
 
-struct accumulative_st {
-    chain first;
-    chain last;
-    unsigned int cat;
+struct quant_st {
+    qunit devc;
     sdnum size;
     sdnum completed;
     unsigned char stochastic;
     unsigned char pdist;
     pfunc cfun;
 };
-
 
 #define MODE_GAMMA_RAW    0
 #define MODE_GAMMA_HASH   1
@@ -77,7 +75,7 @@ typedef struct individual_st {
   unsigned int age;
   unsigned int devcycle;
   unsigned int development;
-  accp accumulate;
+  quant accumulate;
   sdnum number;
 } individual_data;
 
@@ -149,24 +147,30 @@ double nbinom_dist_prob(double, double, unsigned int);
 
 /* ******************************* */
 
-char choose(unsigned int, double *, unsigned int, unsigned int *);
-accp accp_init(unsigned char, unsigned char);
-char accp_empty(accp);
-char accp_destroy(accp *);
-#define accp_add(pop,stage,size) {             \
-    sdnum accp_var_tmp;                        \
-    if ((pop)->stochastic)                     \
-      accp_var_tmp.i = (unsigned int)(size);   \
-    else                                       \
-      accp_var_tmp.d = (double)(size);         \
-    accp_sdadd((pop),(stage),accp_var_tmp);    \
-  }
-char accp_sdadd(accp, unsigned int, sdnum);
-void accp_print(accp);
-sdnum accp_get_size(accp);
-char chain_resize(accp, unsigned int);
-char accp_iterate(accp, double, double);
-char accp_survive(accp, double, sdnum *);
+double fun_pois_C(double, double);
+double fun_fixed_C(double, double);
+double fun_unif_C(double, double);
+double fun_cpois_C(double, double);
+
+qunit qunit_new(double,sdnum);
+void qunit_free(qunit *);
+
+quant quant_init(unsigned char, unsigned char);
+char quant_empty(quant);
+char quant_destroy(quant *);
+#define quant_add(pop,dev,size) {   \
+  sdnum tmp;                        \
+  if ((pop)->stochastic)            \
+    tmp.i = (unsigned int)size;     \
+  else                              \
+    tmp.d = (double)size;           \
+  quant_sdadd((pop),(dev),tmp);     \
+}
+char quant_sdadd(quant, double, sdnum);
+char quant_sdpopadd(quant, quant);
+void quant_print(quant);
+char quant_iterate(quant, double, double);
+char quant_survive(quant, double, sdnum *);
 
 /* ******************************* */
 
@@ -187,14 +191,14 @@ void swap(spop, individual_data *, individual_data *);
       spop_var_tmp.i = (int)(number);                                     \
     else                                                                  \
       spop_var_tmp.d = (double)(number);                                  \
-    accp dev = 0;                                                         \
+    quant dev = 0;                                                        \
     if ((s)->accumulative) {                                              \
-       dev = accp_init((s)->stochastic,(s)->gamma_mode);                  \
-       accp_sdadd(dev,(stage),spop_var_tmp);                                  \
+       dev = quant_init((s)->stochastic,(s)->gamma_mode);                 \
+       quant_sdadd(dev,(stage),spop_var_tmp);                             \
     }                                                                     \
     spop_sdadd((s),(age),(devcycle),(development),dev,spop_var_tmp);      \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, accp, sdnum);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, quant, sdnum);
 
 void spop_popadd(spop, spop);
 
@@ -205,7 +209,7 @@ char spop_iterate(spop, double, double, double, iter_func, double, double, doubl
 /* ******************************* */
 
 unsigned int spoplib_init(unsigned char, unsigned char, unsigned char);
-void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, double);
+void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double, double);
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
 void spoplib_print(unsigned int);

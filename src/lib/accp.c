@@ -231,7 +231,7 @@ char accp_iterate_deterministic(accp pop,
     chain tmp;
     pop->completed.d = 0.0;
     for (tmp=pop->first, count=0; tmp; tmp=tmp->next, count++) {
-      item = tmp->size.d * (1.0-(pop->cfun)((pop->cat-1-count),gamma_theta));
+      item = tmp->size.d * (1.0-(pop->cfun)((pop->cat-count-1),gamma_theta));
       pop->completed.d += item;
     }
     //
@@ -260,7 +260,7 @@ char accp_iterate_stochastic(accp pop,
     pop->completed.i = 0;
     for (tmp=pop->first, count=0; tmp; tmp=tmp->next, count++) {
       item = gsl_ran_binomial(RANDOM,
-                              1.0-(pop->cfun)((pop->cat-1-count),gamma_theta),
+                              1.0-(pop->cfun)((pop->cat-count-1),gamma_theta),
                               tmp->size.i);
       tmp->size.i -= item;
       pop->completed.i += item;

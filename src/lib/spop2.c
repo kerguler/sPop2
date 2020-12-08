@@ -88,7 +88,7 @@ spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char
 void spop_empty(spop s) {
   if (s->individuals) {
     if (s->individuals->accumulate) {
-        accp_destroy(&(s->individuals->accumulate));
+        quant_destroy(&(s->individuals->accumulate));
         s->individuals->accumulate = 0;
     }
     free(s->individuals);
@@ -133,7 +133,7 @@ void spop_print(spop s) {
                    s->individuals[count].development,
                    s->individuals[count].number.i);
             if (s->individuals[count].accumulate) {
-                accp_print(s->individuals[count].accumulate);
+                quant_print(s->individuals[count].accumulate);
             }
         }
     } else {
@@ -148,7 +148,7 @@ void spop_print(spop s) {
                    s->individuals[count].development,
                    s->individuals[count].number.d);
             if (s->individuals[count].accumulate) {
-                accp_print(s->individuals[count].accumulate);
+                quant_print(s->individuals[count].accumulate);
             }
         }
     }
@@ -209,7 +209,7 @@ int search(individual_data *arr, int l, int r, individual_data *x) {
   return -1;
 }
 
-void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, accp dev, sdnum number) {
+void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, quant dev, sdnum number) {
     if (s->stochastic) {
         if (number.i <= 0) return;
     } else {
@@ -243,7 +243,7 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
                 s->individuals[i].devcycle = 0;
                 s->individuals[i].development = 0;
                 if (s->accumulative) {
-                    s->individuals[i].accumulate = accp_init(s->stochastic, s->gamma_mode);
+                    s->individuals[i].accumulate = quant_init(s->stochastic, s->gamma_mode);
                 } else {
                     s->individuals[i].accumulate = 0;
                 }
@@ -261,20 +261,8 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
     s->individuals[cat].devcycle = tmp.devcycle;
     s->individuals[cat].development = tmp.development;
     //
-    if (s->accumulative) {
-        if (s->individuals[cat].accumulate->cat < tmp.accumulate->cat)
-            chain_resize(s->individuals[cat].accumulate, tmp.accumulate->cat);
-        chain dst = s->individuals[cat].accumulate->first,
-                src = tmp.accumulate->first;
-        for (; src && dst; src = src->next, dst = dst->next) {
-            if (s->stochastic) {
-                dst->size.i += src->size.i;
-            } else {
-                dst->size.d += src->size.d;
-            }
-        }
-        s->individuals[cat].accumulate->size = tmp.number;
-    }
+    if (s->accumulative)
+        quant_sdpopadd(s->individuals[cat].accumulate,tmp.accumulate);
     // Note: chain size should already be incorporated into tmp.number
     //
     if (s->stochastic) {
@@ -412,7 +400,7 @@ void spop_removeitem(spop s, unsigned int *i, char *remove) {
         if (s->accumulative) {
             for (j = tmp; j < s->ncat; j++)
                 if (s->individuals[j].accumulate)
-                    accp_destroy(&(s->individuals[j].accumulate));
+                    quant_destroy(&(s->individuals[j].accumulate));
         }
         s->ncat = tmp;
         s->individuals = (individual_data *)realloc(s->individuals, s->ncat * sizeof(individual_data));
@@ -466,7 +454,7 @@ char spop_iterate(spop  s,
             // Death
             prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
             if (s->accumulative) {
-                if (accp_survive(tmpn->accumulate, prob, &k)) return 1;
+                if (quant_survive(tmpn->accumulate, prob, &k)) return 1;
                 if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
                     (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
                     remove = 1;
@@ -491,7 +479,10 @@ char spop_iterate(spop  s,
         //
         if (remove == 0) {
             if (s->accumulative) {
-                if (accp_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
+                printf("Here0 %g %g\n",dev_mean,dev_sd);
+                quant_print(tmpn->accumulate);
+                if (quant_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
+                printf("Here1\n");
                 k = tmpn->accumulate->completed;
                 if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
                     (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
@@ -567,7 +558,7 @@ unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode, un
     return 0;
 }
 
-void spoplib_add(unsigned int id, unsigned int age, unsigned int devcycle, unsigned int development, unsigned int stage, double number) {
+void spoplib_add(unsigned int id, unsigned int age, unsigned int devcycle, unsigned int development, double stage, double number) {
     if (pop_list[id])
         spop_add(pop_list[id],age,devcycle,development,stage,number);
 }
