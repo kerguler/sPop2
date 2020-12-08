@@ -220,11 +220,7 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
     tmp.age = age;
     tmp.devcycle = devcycle;
     tmp.development = development;
-    if (s->accumulative)
-        tmp.accumulate = dev;
-    else
-        tmp.accumulate = 0;
-    tmp.number = number;
+    // WARNING: This should be enough for the "search" algorithm
     //
     int cat = -1;
     if (s->individuals && s->ncat && s->cat)
@@ -262,15 +258,14 @@ void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int de
     s->individuals[cat].development = tmp.development;
     //
     if (s->accumulative)
-        quant_sdpopadd(s->individuals[cat].accumulate,tmp.accumulate);
-    // Note: chain size should already be incorporated into tmp.number
+        quant_sdpopadd(s->individuals[cat].accumulate,dev);
     //
     if (s->stochastic) {
-        s->individuals[cat].number.i += tmp.number.i;
-        s->size.i += tmp.number.i;
+        s->individuals[cat].number.i += number.i;
+        s->size.i += number.i;
     } else {
-        s->individuals[cat].number.d += tmp.number.d;
-        s->size.d += tmp.number.d;
+        s->individuals[cat].number.d += number.d;
+        s->size.d += number.d;
     }
     //
     qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);
@@ -399,8 +394,10 @@ void spop_removeitem(spop s, unsigned int *i, char *remove) {
         unsigned int tmp = (s->ncat >> 1) - 1;
         if (s->accumulative) {
             for (j = tmp; j < s->ncat; j++)
-                if (s->individuals[j].accumulate)
+                if (s->individuals[j].accumulate) {
                     quant_destroy(&(s->individuals[j].accumulate));
+                    s->individuals[j].accumulate = 0;
+                }
         }
         s->ncat = tmp;
         s->individuals = (individual_data *)realloc(s->individuals, s->ncat * sizeof(individual_data));
@@ -479,10 +476,7 @@ char spop_iterate(spop  s,
         //
         if (remove == 0) {
             if (s->accumulative) {
-                printf("Here0 %g %g\n",dev_mean,dev_sd);
-                quant_print(tmpn->accumulate);
                 if (quant_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
-                printf("Here1\n");
                 k = tmpn->accumulate->completed;
                 if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
                     (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {

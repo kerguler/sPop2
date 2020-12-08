@@ -166,13 +166,15 @@ char quant_sdpopadd(quant pop, quant add) {
     qunit p = 0, tmp = 0, pp = 0;
     HASH_ITER(hh, add->devc, p, tmp) {
         HASH_FIND(hh, pop->devc, &(p->dev), sizeof(double), pp);
-        if (pp)
+        if (pp) {
             if (pop->stochastic)
                 pp->size.i += p->size.i;
             else
                 pp->size.d += p->size.d;
-        else
-            HASH_ADD(hh, pop->devc, dev, sizeof(double), p);
+        } else {
+            qunit ppp = qunit_new(p->dev,p->size);
+            HASH_ADD(hh, pop->devc, dev, sizeof(double), ppp);
+        }
         //
         if (pop->stochastic)
             pop->size.i += p->size.i;
