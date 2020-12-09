@@ -8,8 +8,6 @@
 #include <gsl/gsl_randist.h>
 #include "spop2.h"
 
-#define TAU 1.0
-
 gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
@@ -25,10 +23,7 @@ double fun_unif_C(double x, double par) {
 }
 
 double fun_cpois_C(double x, double par) {
-    if (TAU == 1.0)
-        return gsl_sf_gamma_inc_Q(x+1.0, 1.0/par);
-    else
-        return gsl_sf_gamma_inc_Q(((double)x/TAU)+0.5, 1.0/par);
+    return gsl_sf_gamma_inc_Q(x + 1.0, 1.0 / par);
 }
 
 int aorder (const void *a, const void *b) {
@@ -317,8 +312,6 @@ char quant_iterate(quant pop,
         case MODE_ACCP_GAMMA:
             gamma_theta = dev_sd * dev_sd / dev_mean;
             gamma_k = dev_mean / gamma_theta;
-            //
-            gamma_k *= TAU;
             // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
