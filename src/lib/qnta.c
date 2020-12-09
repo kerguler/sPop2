@@ -235,13 +235,15 @@ char quant_iterate_stochastic(quant pop,
             if (!vec[i]) continue;
             accd = p->dev + ((double)i / gamma_k);
             itm.i = vec[i];
-            qnt = qunit_new(accd, itm);
-            if (!qnt) return 1;
-            HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-            if (pp)
-                pp->size.i += itm.i;
-            else
-                HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+            if (itm.i) {
+                qnt = qunit_new(accd, itm);
+                if (!qnt) return 1;
+                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                if (pp)
+                    pp->size.i += itm.i;
+                else
+                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+            }
         }
         //
         HASH_DEL(pop->devc, p);
@@ -274,14 +276,16 @@ char quant_iterate_deterministic(quant pop,
             item.d = p->size.d * ((pop->cfun)(acc - dev, gamma_theta) -
                                   (acc == dev ? 0.0 : (pop->cfun)(acc - dev - 1, gamma_theta)));
             accd = p->dev + ((double) (acc - dev) / gamma_k);
-            qnt = qunit_new(accd, item);
-            if (!qnt) return 1;
-            HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-            if (pp)
-                pp->size.d += item.d;
-            else
-                HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-            pop->size.d += item.d;
+            if (item.d) {
+                qnt = qunit_new(accd, item);
+                if (!qnt) return 1;
+                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                if (pp)
+                    pp->size.d += item.d;
+                else
+                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                pop->size.d += item.d;
+            }
         }
         //
         HASH_DEL(pop->devc, p);
@@ -380,6 +384,10 @@ char quant_survive(quant pop, double prob, sdnum *ret) {
             p->size.i -= item.i;
             pop->size.i -= item.i;
             ret->i += item.i;
+            if (!(p->size.i)) {
+                HASH_DEL(pop->devc, p);
+                free(p);
+            }
         }
     } else {
         HASH_ITER(hh, pop->devc, p, tmp) {
@@ -388,6 +396,10 @@ char quant_survive(quant pop, double prob, sdnum *ret) {
             p->size.d -= item.d;
             pop->size.d -= item.d;
             ret->d += item.d;
+            if (!(p->size.d)) {
+                HASH_DEL(pop->devc, p);
+                free(p);
+            }
         }
     }
     return 0;
