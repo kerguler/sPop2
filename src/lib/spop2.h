@@ -152,6 +152,8 @@ double fun_fixed_C(double, double);
 double fun_unif_C(double, double);
 double fun_cpois_C(double, double);
 
+char fun_rdist(unsigned int, double *, unsigned int, unsigned int *);
+
 qunit qunit_new(double,sdnum);
 void qunit_free(qunit *);
 

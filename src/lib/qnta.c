@@ -8,7 +8,9 @@
 #include <gsl/gsl_randist.h>
 #include "spop2.h"
 
-gsl_rng *RANDOM;
+#define TAU 1.0
+
+gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
     return gsl_cdf_poisson_P((unsigned int)x, 1.0/par);
@@ -23,14 +25,19 @@ double fun_unif_C(double x, double par) {
 }
 
 double fun_cpois_C(double x, double par) {
-    return gsl_sf_gamma_inc_Q(x+1.0, 1.0/par);
+    if (TAU == 1.0)
+        return gsl_sf_gamma_inc_Q(x+1.0, 1.0/par);
+    else
+        return gsl_sf_gamma_inc_Q(((double)x/TAU)+0.5, 1.0/par);
 }
 
 int aorder (const void *a, const void *b) {
     return ( *(double *)a > *(double *)b ) ? 1 : ( ( *(double *)a < *(double *)b ) ? -1 : 0 );
 }
 
-char distribute(unsigned int pop, double *p, unsigned int size, unsigned int *ret) {
+char fun_rdist (unsigned int pop, double *p, unsigned int size, unsigned int *ret) {
+    if (!RANDOM)
+        RANDOM = get_RAND_GSL();
     double max=0.0;
     unsigned int i=0, j=0;
     //
@@ -228,7 +235,7 @@ char quant_iterate_stochastic(quant pop,
         //
         for (i=0; i<rsize; i++)
             prob[i] = (pop->cfun)(i, gamma_theta);
-        if (distribute(p->size.i,prob,rsize,vec)) { free(prob); free(vec); return 1; }
+        if (fun_rdist(p->size.i,prob,rsize,vec)) { free(prob); free(vec); return 1; }
         for (i=0; i < rsize; i++) {
             if (!vec[i]) continue;
             accd = p->dev + ((double)i / gamma_k);
@@ -310,6 +317,8 @@ char quant_iterate(quant pop,
         case MODE_ACCP_GAMMA:
             gamma_theta = dev_sd * dev_sd / dev_mean;
             gamma_k = dev_mean / gamma_theta;
+            //
+            gamma_k *= TAU;
             // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
