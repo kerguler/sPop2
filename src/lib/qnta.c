@@ -307,10 +307,11 @@ char quant_iterate(quant pop,
             gamma_k = dev_mean / gamma_theta;
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                /*
                 double m = gamma_k * gamma_theta;
                 double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",
-                       m, s);
+                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
+                */
             }
             break;
         case MODE_ACCP_GAMMA:
@@ -319,10 +320,11 @@ char quant_iterate(quant pop,
             // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                /*
                 double m = gamma_k * gamma_theta;
                 double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",
-                       m, s);
+                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
+                */
             }
             break;
         case MODE_ACCP_FIXED:
@@ -339,10 +341,11 @@ char quant_iterate(quant pop,
             //printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                /*
                 double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
                 double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n",
-                       m, s);
+                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
+                */
             }
             // printf("p=%g, r=%g\n",gamma_theta,gamma_k);
             break;
