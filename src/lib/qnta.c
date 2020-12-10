@@ -15,7 +15,7 @@ double fun_pois_C(double x, double par) {
 }
 
 double fun_fixed_C(double x, double par) {
-    return (unsigned int)x > 0;
+    return (unsigned int)x >= par;
 }
 
 double fun_unif_C(double x, double par) {
@@ -329,7 +329,7 @@ char quant_iterate(quant pop,
             break;
         case MODE_ACCP_FIXED:
             gamma_k = round(dev_mean);
-            gamma_theta = 1.0 / gamma_k;
+            gamma_theta = 1.0;
             break;
         case MODE_ACCP_PASCAL:
             gamma_theta = dev_mean / (dev_sd * dev_sd);
