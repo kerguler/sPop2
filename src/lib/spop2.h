@@ -58,6 +58,7 @@ struct quant_st {
 #define MODE_ACCP_FIXED   6
 #define MODE_ACCP_PASCAL  7
 #define MODE_ACCP_GAMMA   8
+#define MODE_ACCP_DAILY   9
 
 /* ******************************* */
 
@@ -149,6 +150,7 @@ double nbinom_dist_prob(double, double, unsigned int);
 
 double fun_pois_C(double, double);
 double fun_fixed_C(double, double);
+double fun_daily_C(double, double);
 double fun_unif_C(double, double);
 double fun_cpois_C(double, double);
 

@@ -18,6 +18,11 @@ double fun_fixed_C(double x, double par) {
     return (unsigned int)x >= par;
 }
 
+double fun_daily_C(double x, double par) {
+    // return ((unsigned int)x == 0) ? 1.0-(1.0 / par) : 1.0;
+    return ((unsigned int)x == 0) ? 1.0-par : 1.0;
+}
+
 double fun_unif_C(double x, double par) {
     return 1.0-pow(par, x+1.0);
 }
@@ -77,6 +82,9 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
             break;
         case MODE_ACCP_GAMMA:
             pop->cfun = fun_cpois_C;
+            break;
+        case MODE_ACCP_DAILY:
+            pop->cfun = fun_daily_C;
             break;
         default:
             printf("I don't know what to do with this: %d\n", pop->pdist);
@@ -331,6 +339,7 @@ char quant_iterate(quant pop,
             gamma_k = round(dev_mean);
             gamma_theta = 1.0;
             break;
+        case MODE_ACCP_DAILY:
         case MODE_ACCP_PASCAL:
             gamma_theta = dev_mean / (dev_sd * dev_sd);
             if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
