@@ -53,7 +53,7 @@ void set_DPOP_MAX_DAYS(unsigned int days) {
  *                MODE_ACCP_GAMMA  (MODE_GAMMA_HASH) *under construction
  *  accumulative: logical indicator for an accumulative development process
  */
-spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
+spop spop_init(unsigned char stochastic, unsigned char gamma_mode) {
   spop pop = (spop)malloc(sizeof(struct population_st));
   pop->individuals = 0;
   pop->ncat = 0;
@@ -71,15 +71,16 @@ spop spop_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char
   pop->devtable = 0;
   pop->gamma_mode = gamma_mode;
   pop->stochastic = stochastic;
-  pop->accumulative = accumulative;
   switch (pop->gamma_mode) {
       case MODE_ACCP_ERLANG:
       case MODE_ACCP_FIXED:
       case MODE_ACCP_PASCAL:
       case MODE_ACCP_GAMMA:
+      case MODE_ACCP_CASWELL:
           pop->accumulative = 1;
           break;
       default:
+          pop->accumulative = 0;
           break;
   }
   return pop;
@@ -350,6 +351,7 @@ prob_func assign_prob_func(spop s, double prob, double mean, double sd) {
       return calc_prob_gamma_hash;
       break;
     case MODE_ACCP_PASCAL:
+    case MODE_ACCP_CASWELL:
     case MODE_NBINOM_RAW:
       // printf("Assigning calc_prob_gamma_hash\n");
       return calc_prob_nbinom_raw;
@@ -430,7 +432,7 @@ char spop_iterate(spop  s,
     if (s->devtable) {
         spop_empty((spop) (s->devtable));
     } else {
-        s->devtable = (void *) spop_init(s->stochastic, s->gamma_mode, s->accumulative);
+        s->devtable = (void *) spop_init(s->stochastic, s->gamma_mode);
     }
     //
     prob_func calc_prob_death;
@@ -544,11 +546,11 @@ char spop_iterate(spop  s,
 unsigned int MAXPOPS = 1;
 spop *pop_list = 0;
 
-unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode, unsigned char accumulative) {
+unsigned int spoplib_init(unsigned char stochastic, unsigned char gamma_mode) {
     if (pop_list)
         spoplib_destroy_all();
     pop_list = (spop *)calloc(MAXPOPS,sizeof(spop));
-    pop_list[0] = spop_init(stochastic,gamma_mode,accumulative);
+    pop_list[0] = spop_init(stochastic,gamma_mode);
     return 0;
 }
 

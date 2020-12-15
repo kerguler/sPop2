@@ -181,7 +181,7 @@ char quant_survive(quant, double, sdnum *);
 void set_DPOP_EPS(double);
 void set_DPOP_MAX_DAYS(unsigned int);
 
-spop spop_init(unsigned char, unsigned char, unsigned char);
+spop spop_init(unsigned char, unsigned char);
 void spop_empty(spop);
 void spop_destroy(spop*);
 void spop_print(spop);
@@ -212,7 +212,7 @@ char spop_iterate(spop, double, double, double, iter_func, double, double, doubl
 
 /* ******************************* */
 
-unsigned int spoplib_init(unsigned char, unsigned char, unsigned char);
+unsigned int spoplib_init(unsigned char, unsigned char);
 void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double, double);
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
