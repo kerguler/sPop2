@@ -8,6 +8,27 @@
 #include <gsl/gsl_randist.h>
 #include "spop2.h"
 
+/*
+#include <signal.h>
+void (*signal(int signum, void (*sighandler)(int)))(int);
+void clean_exit_on_sig(int sig_num) {
+    printf ("\n Signal %d received\n",sig_num);
+    exit(1);
+}
+*/
+
+/*
+#define free(pointer) {printmem(0,0,sizeof(*(pointer)),__FILE__,__LINE__); free((pointer));}
+void *printmem(int, void *, size_t, char *, int);
+
+void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
+    static size_t total = 0;
+    total += (type?1:-1)*size;
+    printf("%d: %s: %d: %d: %d\n",type,filen,linen,(int)(size),(int)(total));
+    return pointer;
+}
+*/
+
 gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
@@ -18,8 +39,7 @@ double fun_fixed_C(double x, double par) {
     return (unsigned int)x >= par;
 }
 
-double fun_daily_C(double x, double par) {
-    // return ((unsigned int)x == 0) ? 1.0-(1.0 / par) : 1.0;
+double fun_Caswell_C(double x, double par) {
     return ((unsigned int)x == 0) ? 1.0-par : 1.0;
 }
 
@@ -64,6 +84,9 @@ char fun_rdist (unsigned int pop, double *p, unsigned int size, unsigned int *re
 }
 
 quant quant_init(unsigned char stochastic, unsigned char pdist) {
+    /*
+     * signal(SIGSEGV, clean_exit_on_sig);
+     */
     quant pop = (quant) calloc(1, sizeof(struct quant_st));
     if (!pop) return 0;
     pop->devc = 0;
@@ -83,8 +106,8 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
         case MODE_ACCP_GAMMA:
             pop->cfun = fun_cpois_C;
             break;
-        case MODE_ACCP_DAILY:
-            pop->cfun = fun_daily_C;
+        case MODE_ACCP_CASWELL:
+            pop->cfun = fun_Caswell_C;
             break;
         default:
             printf("I don't know what to do with this: %d\n", pop->pdist);
@@ -230,27 +253,35 @@ char quant_iterate_stochastic(quant pop,
         pop->size.i -= item;
         pop->completed.i += item;
         //
-        unsigned int rsize = gamma_k - dev;
-        unsigned int *vec = (unsigned int *)calloc(rsize,sizeof(unsigned int));
-        if (!vec) return 1;
-        double *prob = (double *)calloc(rsize,sizeof(double));
-        if (!prob) { free(vec); return 1; }
-        //
-        for (i=0; i<rsize; i++)
-            prob[i] = (pop->cfun)(i, gamma_theta);
-        if (fun_rdist(p->size.i,prob,rsize,vec)) { free(prob); free(vec); return 1; }
-        for (i=0; i < rsize; i++) {
-            if (!vec[i]) continue;
-            accd = p->dev + ((double)i / gamma_k);
-            itm.i = vec[i];
-            if (itm.i) {
-                qnt = qunit_new(accd, itm);
-                if (!qnt) return 1;
-                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                if (pp)
-                    pp->size.i += itm.i;
-                else
-                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+        if (p->size.i > 0) {
+            unsigned int rsize = gamma_k - dev;
+            unsigned int *vec = (unsigned int *) calloc(rsize, sizeof(unsigned int));
+            if (!vec) return 1;
+            double *prob = (double *) calloc(rsize, sizeof(double));
+            if (!prob) {
+                free(vec);
+                return 1;
+            }
+            for (i = 0; i < rsize; i++)
+                prob[i] = (pop->cfun)(i, gamma_theta);
+            if (fun_rdist(p->size.i, prob, rsize, vec)) {
+                free(prob);
+                free(vec);
+                return 1;
+            }
+            for (i = 0; i < rsize; i++) {
+                if (!vec[i]) continue;
+                accd = p->dev + ((double) i / gamma_k);
+                itm.i = vec[i];
+                if (itm.i) {
+                    qnt = qunit_new(accd, itm);
+                    if (!qnt) return 1;
+                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                    if (pp)
+                        pp->size.i += itm.i;
+                    else
+                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                }
             }
         }
         //
@@ -258,7 +289,6 @@ char quant_iterate_stochastic(quant pop,
         free(p);
     };
     pop->devc = devc;
-    //
     return 0;
 }
 
@@ -300,7 +330,6 @@ char quant_iterate_deterministic(quant pop,
         free(p);
     };
     pop->devc = devc;
-    //
     return 0;
 }
 
@@ -339,7 +368,25 @@ char quant_iterate(quant pop,
             gamma_k = round(dev_mean);
             gamma_theta = 1.0;
             break;
-        case MODE_ACCP_DAILY:
+        case MODE_ACCP_CASWELL:
+            // gamma_theta = dev_mean / (dev_mean + (dev_sd * dev_sd));
+            gamma_theta = dev_mean / (dev_sd * dev_sd);
+            if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
+                printf("The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
+                return 0;
+            }
+            // gamma_k = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
+            gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
+            // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
+            if (gamma_k != round(gamma_k)) {
+                gamma_k = round(gamma_k);
+                /*
+                double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
+                double s = sqrt(dev_mean / gamma_theta);
+                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
+                */
+            }
+            break;
         case MODE_ACCP_PASCAL:
             gamma_theta = dev_mean / (dev_sd * dev_sd);
             if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
@@ -347,13 +394,13 @@ char quant_iterate(quant pop,
                 return 0;
             }
             gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
-            //printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
+            // printf("k=%.18f, theta=%.18f\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
                 /*
                 double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
                 double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
+                printf("For the MODE_ACCP_PASCAL distribution, the shape parameter will be adjusted to yield\nk = %.18f, theta = %.18f, Mean = %.18f, St.dev. = %.18f\n", gamma_k, gamma_theta, m, s);
                 */
             }
             // printf("p=%g, r=%g\n",gamma_theta,gamma_k);

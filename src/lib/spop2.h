@@ -58,7 +58,7 @@ struct quant_st {
 #define MODE_ACCP_FIXED   6
 #define MODE_ACCP_PASCAL  7
 #define MODE_ACCP_GAMMA   8
-#define MODE_ACCP_DAILY   9
+#define MODE_ACCP_CASWELL 9
 
 /* ******************************* */
 
