@@ -148,9 +148,6 @@ double nbinom_dist_prob(double, double, unsigned int);
 
 /* ******************************* */
 
-void set_QSIZE_EPS(double);
-void set_QSIZE_ROUND(double);
-
 double fun_pois_C(double, double);
 double fun_fixed_C(double, double);
 double fun_daily_C(double, double);

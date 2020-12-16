@@ -29,14 +29,20 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
-double QSIZE_EPS = 0.0;
-void set_QSIZE_EPS(double eps) {
-    QSIZE_EPS = eps;
-}
+double QSIZE_MAX = 10000.0;
+#define QSIZE_MAX_EPS   1e-3
+#define QSIZE_MAX_NONE  0.0
 
-double QSIZE_ROUND_EPS = 1e-3;
-void set_QSIZE_ROUND(double eps) {
-    QSIZE_ROUND_EPS = eps;
+double QSIZE_ROUND_EPS = QSIZE_MAX_NONE;
+double QSIZE_EPS = 0.0;
+void set_APPROX(char on) {
+    if (on) {
+        QSIZE_ROUND_EPS = QSIZE_MAX_EPS;
+        QSIZE_EPS = 1e-8;
+    } else {
+        QSIZE_ROUND_EPS = QSIZE_MAX_NONE;
+        QSIZE_EPS = 0.0;
+    }
 }
 
 double QSIZE_ROUND(double val) {
@@ -101,6 +107,8 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     /*
      * signal(SIGSEGV, clean_exit_on_sig);
      */
+    set_APPROX(0);
+    //
     quant pop = (quant) calloc(1, sizeof(struct quant_st));
     if (!pop) return 0;
     pop->devc = 0;
@@ -260,6 +268,7 @@ char quant_iterate_stochastic(quant pop,
     unsigned int dev = 0, i = 0;
     sdnum itm;
     //
+    unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         dev = floor(p->dev * gamma_k);
         item = gsl_ran_binomial(RANDOM,
@@ -298,8 +307,10 @@ char quant_iterate_stochastic(quant pop,
                     HASH_FIND(hh, devc, &accd, sizeof(double), pp);
                     if (pp)
                         pp->size.i += itm.i;
-                    else
+                    else {
                         HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                        counter++;
+                    }
                 }
             }
         }
@@ -307,6 +318,13 @@ char quant_iterate_stochastic(quant pop,
         HASH_DEL(pop->devc, p);
         free(p);
     };
+    //
+    if (counter > QSIZE_MAX) {
+        set_APPROX(1);
+        printf("Warning! Hash size = %d\n",counter);
+    } else {
+        set_APPROX(0);
+    }
     pop->devc = devc;
     return 0;
 }
@@ -325,7 +343,7 @@ char quant_iterate_deterministic(quant pop,
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
     //
-    // unsigned int counter = 0;
+    unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         if (p->size.d > QSIZE_EPS) {
             dev = floor(p->dev * gamma_k);
@@ -346,7 +364,7 @@ char quant_iterate_deterministic(quant pop,
                         pp->size.d += item.d;
                     else {
                         HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                        // counter++;
+                        counter++;
                     }
                     pop->size.d += item.d;
                 }
@@ -358,7 +376,12 @@ char quant_iterate_deterministic(quant pop,
     };
     pop->devc = devc;
     //
-    // printf("Hash size = %d\n",counter);
+    if (counter > QSIZE_MAX) {
+        set_APPROX(1);
+        printf("Warning! Hash size = %d\n",counter);
+    } else {
+        set_APPROX(0);
+    }
     //
     return 0;
 }
