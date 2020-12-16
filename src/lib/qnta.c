@@ -29,6 +29,11 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
+double QSIZE_EPS = 1e-14;
+void set_QSIZE_EPS(double eps) {
+    QSIZE_EPS = eps;
+}
+
 gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
@@ -307,22 +312,24 @@ char quant_iterate_deterministic(quant pop,
     qunit pp = 0;
     //
     HASH_ITER(hh, pop->devc, p, tmp) {
-        dev = floor(p->dev * gamma_k);
-        pop->completed.d += p->size.d * (1.0 - (pop->cfun)(gamma_k - dev - 1, gamma_theta));
-        //
-        for (acc = dev; acc < gamma_k; acc++) {
-            item.d = p->size.d * ((pop->cfun)(acc - dev, gamma_theta) -
-                                  (acc == dev ? 0.0 : (pop->cfun)(acc - dev - 1, gamma_theta)));
-            accd = p->dev + ((double) (acc - dev) / gamma_k);
-            if (item.d) {
-                qnt = qunit_new(accd, item);
-                if (!qnt) return 1;
-                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                if (pp)
-                    pp->size.d += item.d;
-                else
-                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                pop->size.d += item.d;
+        if (p->size.d > QSIZE_EPS) {
+            dev = floor(p->dev * gamma_k);
+            pop->completed.d += p->size.d * (1.0 - (pop->cfun)(gamma_k - dev - 1, gamma_theta));
+            //
+            for (acc = dev; acc < gamma_k; acc++) {
+                item.d = p->size.d * ((pop->cfun)(acc - dev, gamma_theta) -
+                                      (acc == dev ? 0.0 : (pop->cfun)(acc - dev - 1, gamma_theta)));
+                accd = p->dev + ((double) (acc - dev) / gamma_k);
+                if (item.d) {
+                    qnt = qunit_new(accd, item);
+                    if (!qnt) return 1;
+                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                    if (pp)
+                        pp->size.d += item.d;
+                    else
+                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                    pop->size.d += item.d;
+                }
             }
         }
         //
