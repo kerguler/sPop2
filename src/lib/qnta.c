@@ -34,6 +34,15 @@ void set_QSIZE_EPS(double eps) {
     QSIZE_EPS = eps;
 }
 
+double QSIZE_ROUND_EPS = 1e-3;
+void set_QSIZE_ROUND(double eps) {
+    QSIZE_ROUND_EPS = eps;
+}
+
+double QSIZE_ROUND(double val) {
+    return round(val / QSIZE_ROUND_EPS) * QSIZE_ROUND_EPS;
+}
+
 gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
@@ -175,6 +184,8 @@ void qunit_free(qunit *tmp) {
 char quant_sdadd(quant pop, double dev, sdnum size) {
     char ret = 0;
     //
+    if (QSIZE_ROUND_EPS) dev = QSIZE_ROUND(dev);
+    //
     qunit qnt;
     HASH_FIND(hh, pop->devc, &dev, sizeof(double), qnt);
     if (qnt) {
@@ -277,6 +288,9 @@ char quant_iterate_stochastic(quant pop,
             for (i = 0; i < rsize; i++) {
                 if (!vec[i]) continue;
                 accd = p->dev + ((double) i / gamma_k);
+                //
+                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                //
                 itm.i = vec[i];
                 if (itm.i) {
                     qnt = qunit_new(accd, itm);
@@ -321,6 +335,9 @@ char quant_iterate_deterministic(quant pop,
                 item.d = p->size.d * ((pop->cfun)(acc - dev, gamma_theta) -
                                       (acc == dev ? 0.0 : (pop->cfun)(acc - dev - 1, gamma_theta)));
                 accd = p->dev + ((double) (acc - dev) / gamma_k);
+                //
+                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                //
                 if (item.d) {
                     qnt = qunit_new(accd, item);
                     if (!qnt) return 1;
