@@ -29,7 +29,7 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
-double QSIZE_EPS = 1e-14;
+double QSIZE_EPS = 0.0;
 void set_QSIZE_EPS(double eps) {
     QSIZE_EPS = eps;
 }
@@ -311,6 +311,7 @@ char quant_iterate_deterministic(quant pop,
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
     //
+    // unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         if (p->size.d > QSIZE_EPS) {
             dev = floor(p->dev * gamma_k);
@@ -326,8 +327,10 @@ char quant_iterate_deterministic(quant pop,
                     HASH_FIND(hh, devc, &accd, sizeof(double), pp);
                     if (pp)
                         pp->size.d += item.d;
-                    else
+                    else {
                         HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                        // counter++;
+                    }
                     pop->size.d += item.d;
                 }
             }
@@ -337,6 +340,9 @@ char quant_iterate_deterministic(quant pop,
         free(p);
     };
     pop->devc = devc;
+    //
+    // printf("Hash size = %d\n",counter);
+    //
     return 0;
 }
 
