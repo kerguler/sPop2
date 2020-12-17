@@ -159,6 +159,7 @@ char fun_rdist(unsigned int, double *, unsigned int, unsigned int *);
 qunit qunit_new(double,sdnum);
 void qunit_free(qunit *);
 
+char quant_get_cfun(char, pfunc *);
 quant quant_init(unsigned char, unsigned char);
 char quant_empty(quant);
 char quant_destroy(quant *);

@@ -38,10 +38,10 @@ double QSIZE_EPS = 0.0;
 void set_APPROX(char on) {
     if (on) {
         QSIZE_ROUND_EPS = QSIZE_MAX_EPS;
-        QSIZE_EPS = 1e-8;
+        // QSIZE_EPS = 1e-8;
     } else {
         QSIZE_ROUND_EPS = QSIZE_MAX_NONE;
-        QSIZE_EPS = 0.0;
+        // QSIZE_EPS = 0.0;
     }
 }
 
@@ -103,6 +103,31 @@ char fun_rdist (unsigned int pop, double *p, unsigned int size, unsigned int *re
     return 0;
 }
 
+char quant_get_cfun(char mode, pfunc *cfun) {
+    switch (mode) {
+        case MODE_ACCP_ERLANG:
+            *cfun = fun_pois_C;
+            break;
+        case MODE_ACCP_FIXED:
+            *cfun = fun_fixed_C;
+            break;
+        case MODE_ACCP_PASCAL:
+            *cfun = fun_unif_C;
+            break;
+        case MODE_ACCP_GAMMA:
+            *cfun = fun_cpois_C;
+            break;
+        case MODE_ACCP_CASWELL:
+            *cfun = fun_Caswell_C;
+            break;
+        default:
+            printf("Error: I don't know what to do with this: %d\n", mode);
+            return 0;
+            break;
+    }
+    return 1;
+}
+
 quant quant_init(unsigned char stochastic, unsigned char pdist) {
     // signal(SIGSEGV, clean_exit_on_sig);
     //
@@ -111,28 +136,7 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     pop->devc = 0;
     pop->stochastic = stochastic;
     pop->pdist = pdist;
-    switch (pop->pdist) {
-        case MODE_ACCP_ERLANG:
-            pop->cfun = fun_pois_C;
-            break;
-        case MODE_ACCP_FIXED:
-            pop->stochastic = 0;
-            pop->cfun = fun_fixed_C;
-            break;
-        case MODE_ACCP_PASCAL:
-            pop->cfun = fun_unif_C;
-            break;
-        case MODE_ACCP_GAMMA:
-            pop->cfun = fun_cpois_C;
-            break;
-        case MODE_ACCP_CASWELL:
-            pop->cfun = fun_Caswell_C;
-            break;
-        default:
-            printf("I don't know what to do with this: %d\n", pop->pdist);
-            return 0;
-            break;
-    }
+    if (!quant_get_cfun(pop->pdist,&(pop->cfun))) return 0;
     if (stochastic) {
         RANDOM = get_RAND_GSL();
         pop->size.i = 0;
@@ -214,7 +218,7 @@ char quant_sdadd(quant pop, double dev, sdnum size) {
 
 char quant_sdpopadd(quant pop, quant add) {
     if (pop->stochastic != add->stochastic) {
-        printf("Incompatible population types!\n");
+        printf("Error: Incompatible population types!\n");
         return 1;
     }
     qunit p = 0, tmp = 0, pp = 0;
@@ -254,7 +258,8 @@ void quant_print(quant s) {
 
 char quant_iterate_stochastic(quant pop,
                               double gamma_k,
-                              double gamma_theta) {
+                              double gamma_theta,
+                              pfunc cfun) {
     pop->completed.i = 0;
     unsigned int item = 0;
     double accd = 0.0;
@@ -269,7 +274,7 @@ char quant_iterate_stochastic(quant pop,
     HASH_ITER(hh, pop->devc, p, tmp) {
         dev = floor(p->dev * gamma_k);
         item = gsl_ran_binomial(RANDOM,
-                                1.0 - (pop->cfun)(gamma_k - dev - 1, gamma_theta),
+                                1.0 - (cfun)(gamma_k - dev - 1, gamma_theta),
                                 p->size.i);
         p->size.i -= item;
         pop->size.i -= item;
@@ -285,7 +290,7 @@ char quant_iterate_stochastic(quant pop,
                 return 1;
             }
             for (i = 0; i < rsize; i++)
-                prob[i] = (pop->cfun)(i, gamma_theta);
+                prob[i] = (cfun)(i, gamma_theta);
             if (fun_rdist(p->size.i, prob, rsize, vec)) {
                 free(prob);
                 free(vec);
@@ -317,7 +322,7 @@ char quant_iterate_stochastic(quant pop,
     };
     //
     if (counter > QSIZE_MAX)
-        printf("Warning! Hash size = %d\n",counter);
+        printf("Warning: Hash size = %d\n",counter);
     //
     pop->devc = devc;
     return 0;
@@ -325,7 +330,8 @@ char quant_iterate_stochastic(quant pop,
 
 char quant_iterate_deterministic(quant pop,
                                  double gamma_k,
-                                 double gamma_theta) {
+                                 double gamma_theta,
+                                 pfunc cfun) {
     pop->completed.d = 0.0;
     unsigned int acc = 0;
     double accd = 0.0;
@@ -341,11 +347,11 @@ char quant_iterate_deterministic(quant pop,
     HASH_ITER(hh, pop->devc, p, tmp) {
         if (p->size.d > QSIZE_EPS) {
             dev = floor(p->dev * gamma_k);
-            pop->completed.d += p->size.d * (1.0 - (pop->cfun)(gamma_k - dev - 1, gamma_theta));
+            pop->completed.d += p->size.d * (1.0 - (cfun)(gamma_k - dev - 1, gamma_theta));
             //
             for (acc = dev; acc < gamma_k; acc++) {
-                item.d = p->size.d * ((pop->cfun)(acc - dev, gamma_theta) -
-                                      (acc == dev ? 0.0 : (pop->cfun)(acc - dev - 1, gamma_theta)));
+                item.d = p->size.d * ((cfun)(acc - dev, gamma_theta) -
+                                      (acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta)));
                 accd = p->dev + ((double) (acc - dev) / gamma_k);
                 //
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
@@ -371,7 +377,7 @@ char quant_iterate_deterministic(quant pop,
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
-        printf("Warning! Hash size = %d\n",counter);
+        printf("Warning: Hash size = %d\n",counter);
     //
     return 0;
 }
@@ -381,7 +387,13 @@ char quant_iterate(quant pop,
                    double dev_sd) {       // sd development time
     double gamma_k = 0.0,
             gamma_theta = 0.0;
-    switch (pop->pdist) {
+    char pdist = pop->pdist;
+    pfunc cfun = pop->cfun;
+    if (dev_sd == 0) {
+        pdist = MODE_ACCP_FIXED;
+        if (!quant_get_cfun(pdist, &cfun)) return 1;
+    }
+    switch (pdist) {
         case MODE_ACCP_ERLANG:
             gamma_theta = dev_sd * dev_sd / dev_mean;
             gamma_k = dev_mean / gamma_theta;
@@ -415,8 +427,8 @@ char quant_iterate(quant pop,
             // gamma_theta = dev_mean / (dev_mean + (dev_sd * dev_sd));
             gamma_theta = dev_mean / (dev_sd * dev_sd);
             if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
-                printf("The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
-                return 0;
+                printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
+                return 1;
             }
             // gamma_k = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
             gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
@@ -433,8 +445,8 @@ char quant_iterate(quant pop,
         case MODE_ACCP_PASCAL:
             gamma_theta = dev_mean / (dev_sd * dev_sd);
             if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
-                printf("The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
-                return 0;
+                printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
+                return 1;
             }
             gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
             // printf("k=%.18f, theta=%.18f\n",gamma_k,gamma_theta);
@@ -449,9 +461,14 @@ char quant_iterate(quant pop,
             // printf("p=%g, r=%g\n",gamma_theta,gamma_k);
             break;
         default:
-            printf("I don't know what to do with this: %d\n", pop->pdist);
-            return 0;
+            printf("Error: I don't know what to do with this: %d\n", pdist);
+            return 1;
             break;
+    }
+    //
+    if (gamma_k == 0) {
+        printf("Error: 0 mean is not acceptable!\n");
+        return 1;
     }
     //
     if (pop->stochastic) {
@@ -460,12 +477,12 @@ char quant_iterate(quant pop,
         pop->completed.d = 0.0;
     }
     //
-    if (!pop->devc) return 0;
+    if (!pop->devc) return 1;
     //
     if (pop->stochastic)
-        return quant_iterate_stochastic(pop, gamma_k, gamma_theta);
+        return quant_iterate_stochastic(pop, gamma_k, gamma_theta, cfun);
     else
-        return quant_iterate_deterministic(pop, gamma_k, gamma_theta);
+        return quant_iterate_deterministic(pop, gamma_k, gamma_theta, cfun);
     //
     return 0;
 }
