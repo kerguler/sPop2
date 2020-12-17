@@ -104,10 +104,7 @@ char fun_rdist (unsigned int pop, double *p, unsigned int size, unsigned int *re
 }
 
 quant quant_init(unsigned char stochastic, unsigned char pdist) {
-    /*
-     * signal(SIGSEGV, clean_exit_on_sig);
-     */
-    set_APPROX(0);
+    // signal(SIGSEGV, clean_exit_on_sig);
     //
     quant pop = (quant) calloc(1, sizeof(struct quant_st));
     if (!pop) return 0;
@@ -319,12 +316,9 @@ char quant_iterate_stochastic(quant pop,
         free(p);
     };
     //
-    if (counter > QSIZE_MAX) {
-        set_APPROX(1);
+    if (counter > QSIZE_MAX)
         printf("Warning! Hash size = %d\n",counter);
-    } else {
-        set_APPROX(0);
-    }
+    //
     pop->devc = devc;
     return 0;
 }
@@ -376,12 +370,8 @@ char quant_iterate_deterministic(quant pop,
     };
     pop->devc = devc;
     //
-    if (counter > QSIZE_MAX) {
-        set_APPROX(1);
+    if (counter > QSIZE_MAX)
         printf("Warning! Hash size = %d\n",counter);
-    } else {
-        set_APPROX(0);
-    }
     //
     return 0;
 }
