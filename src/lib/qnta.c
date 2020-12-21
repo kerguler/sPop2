@@ -412,6 +412,7 @@ char quant_iterate(quant pop,
             gamma_k = dev_mean / gamma_theta;
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                gamma_theta = dev_mean / gamma_k;
                 /*
                 double m = gamma_k * gamma_theta;
                 double s = sqrt(gamma_theta * m);
@@ -425,6 +426,7 @@ char quant_iterate(quant pop,
             // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                gamma_theta = dev_mean / gamma_k;
                 /*
                 double m = gamma_k * gamma_theta;
                 double s = sqrt(gamma_theta * m);
@@ -448,6 +450,7 @@ char quant_iterate(quant pop,
             // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                gamma_theta = dev_mean / gamma_k;
                 /*
                 double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
                 double s = sqrt(dev_mean / gamma_theta);
@@ -465,6 +468,7 @@ char quant_iterate(quant pop,
             // printf("k=%.18f, theta=%.18f\n",gamma_k,gamma_theta);
             if (gamma_k != round(gamma_k)) {
                 gamma_k = round(gamma_k);
+                gamma_theta = gamma_k / (dev_mean + gamma_k);
                 /*
                 double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
                 double s = sqrt(dev_mean / gamma_theta);
