@@ -593,6 +593,17 @@ void spoplib_read(unsigned int id, double *size, double *developed, double *dead
     }
 }
 
+void spoplib_retrieve(unsigned int id, double *dev, double *size, unsigned int *limit) {
+    if (pop_list[id] && pop_list[id]->accumulative) {
+        unsigned int count = 0;
+        for (count = 0; count < pop_list[id]->cat; count++) {
+            if (pop_list[id]->individuals[count].accumulate) {
+                quant_retrieve(pop_list[id]->individuals[count].accumulate, dev, size, limit);
+            }
+        }
+    }
+}
+
 void spoplib_print(unsigned int id) {
     if (pop_list[id])
         spop_print(pop_list[id]);

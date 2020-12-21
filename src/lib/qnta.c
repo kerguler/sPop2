@@ -256,6 +256,19 @@ void quant_print(quant s) {
     }
 }
 
+void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
+    if (!s) return;
+    unsigned int i = 0;
+    qunit p, tmp;
+    HASH_ITER(hh, s->devc, p, tmp) {
+        dev[i] = p->dev;
+        size[i] = s->stochastic ? (double)(p->size.i) : p->size.d;
+        printf("Retrieve %d %g %g\n",i,dev[i],size[i]);
+        i++;
+    }
+    limit[0] = i;
+}
+
 char quant_iterate_stochastic(quant pop,
                               double *gamma_ks,
                               double *gamma_thetas,

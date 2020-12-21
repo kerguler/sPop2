@@ -174,6 +174,7 @@ char quant_destroy(quant *);
 char quant_sdadd(quant, double, sdnum);
 char quant_sdpopadd(quant, quant);
 void quant_print(quant);
+void quant_retrieve(quant, double *, double *, unsigned int *);
 char quant_iterate(quant, double, double);
 char quant_survive(quant, double, sdnum *);
 
@@ -217,6 +218,7 @@ unsigned int spoplib_init(unsigned char, unsigned char);
 void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double, double);
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
+void spoplib_retrieve(unsigned int, double *, double *, unsigned int *);
 void spoplib_print(unsigned int);
 void spoplib_destroy(unsigned int);
 void spoplib_destroy_all(void);
