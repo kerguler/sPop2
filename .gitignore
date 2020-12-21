@@ -3,6 +3,7 @@
 .deps
 src/bin/.deps
 src/lib/.deps
+src/lib/.libs
 tutorial_Autotools*
 
 # http://www.gnu.org/software/automake
