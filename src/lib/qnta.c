@@ -257,8 +257,10 @@ void quant_print(quant s) {
 }
 
 char quant_iterate_stochastic(quant pop,
-                              double gamma_k,
-                              double gamma_theta,
+                              double *gamma_ks,
+                              double *gamma_thetas,
+                              double *gamma_ps,
+                              unsigned int gamma_size,
                               pfunc cfun) {
     pop->completed.i = 0;
     unsigned int item = 0;
@@ -270,48 +272,68 @@ char quant_iterate_stochastic(quant pop,
     unsigned int dev = 0, i = 0;
     sdnum itm;
     //
+    unsigned int gamma_i = 0,
+                 gamma_psize[2] = {0, 0};
+    double gamma_k = 0.0,
+            gamma_theta = 0.0,
+            gamma_p = 0.0,
+            gamma_prob[2] = {gamma_ps[0], gamma_ps[0]+gamma_ps[1]};
+    //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
-        dev = floor(p->dev * gamma_k);
-        item = gsl_ran_binomial(RANDOM,
-                                1.0 - (cfun)(gamma_k - dev - 1, gamma_theta),
-                                p->size.i);
-        p->size.i -= item;
-        pop->size.i -= item;
-        pop->completed.i += item;
-        //
-        if (p->size.i > 0) {
-            unsigned int rsize = gamma_k - dev;
-            unsigned int *vec = (unsigned int *) calloc(rsize, sizeof(unsigned int));
-            if (!vec) return 1;
-            double *prob = (double *) calloc(rsize, sizeof(double));
-            if (!prob) {
-                free(vec);
-                return 1;
+        if (p->size.i > 0)
+            for (gamma_i=0; gamma_i<gamma_size; gamma_i++)
+                if (fun_rdist(p->size.i, gamma_prob, 2, gamma_psize))
+                    return 1;
+        for (gamma_i=0; gamma_i<gamma_size; gamma_i++) {
+            gamma_k = gamma_ks[gamma_i];
+            gamma_theta = gamma_thetas[gamma_i];
+            gamma_p = gamma_ps[gamma_i];
+            //
+            if (gamma_psize[gamma_i] > 0) {
+                dev = floor(p->dev * gamma_k);
+                item = gsl_ran_binomial(RANDOM,
+                                        (1.0 - (cfun)(gamma_k - dev - 1, gamma_theta)),
+                                        gamma_psize[gamma_i]);
+                gamma_psize[gamma_i] -= item;
+                p->size.i -= item;
+                pop->size.i -= item;
+                pop->completed.i += item;
             }
-            for (i = 0; i < rsize; i++)
-                prob[i] = (cfun)(i, gamma_theta);
-            if (fun_rdist(p->size.i, prob, rsize, vec)) {
-                free(prob);
-                free(vec);
-                return 1;
-            }
-            for (i = 0; i < rsize; i++) {
-                if (!vec[i]) continue;
-                accd = p->dev + ((double) i / gamma_k);
-                //
-                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-                //
-                itm.i = vec[i];
-                if (itm.i) {
-                    qnt = qunit_new(accd, itm);
-                    if (!qnt) return 1;
-                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                    if (pp)
-                        pp->size.i += itm.i;
-                    else {
-                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                        counter++;
+            //
+            if (gamma_psize[gamma_i] > 0) {
+                unsigned int rsize = gamma_k - dev;
+                unsigned int *vec = (unsigned int *) calloc(rsize, sizeof(unsigned int));
+                if (!vec) return 1;
+                double *prob = (double *) calloc(rsize, sizeof(double));
+                if (!prob) {
+                    free(vec);
+                    return 1;
+                }
+                for (i = 0; i < rsize; i++)
+                    prob[i] = (cfun)(i, gamma_theta);
+                if (fun_rdist(gamma_psize[gamma_i], prob, rsize, vec)) {
+                    free(prob);
+                    free(vec);
+                    return 1;
+                }
+                for (i = 0; i < rsize; i++) {
+                    if (!vec[i]) continue;
+                    accd = p->dev + ((double) i / gamma_k);
+                    //
+                    if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                    //
+                    itm.i = vec[i];
+                    if (itm.i) {
+                        qnt = qunit_new(accd, itm);
+                        if (!qnt) return 1;
+                        HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                        if (pp)
+                            pp->size.i += itm.i;
+                        else {
+                            HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                            counter++;
+                        }
                     }
                 }
             }
@@ -319,18 +341,20 @@ char quant_iterate_stochastic(quant pop,
         //
         HASH_DEL(pop->devc, p);
         free(p);
-    };
+    }
+    pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
         printf("Warning: Hash size = %d\n",counter);
     //
-    pop->devc = devc;
     return 0;
 }
 
 char quant_iterate_deterministic(quant pop,
-                                 double gamma_k,
-                                 double gamma_theta,
+                                 double *gamma_ks,
+                                 double *gamma_thetas,
+                                 double *gamma_ps,
+                                 unsigned int gamma_size,
                                  pfunc cfun) {
     pop->completed.d = 0.0;
     unsigned int acc = 0;
@@ -343,37 +367,51 @@ char quant_iterate_deterministic(quant pop,
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
     //
+    unsigned int gamma_i = 0;
+    double gamma_k = 0.0,
+           gamma_theta = 0.0,
+           gamma_p = 0.0,
+           gamma_psize = 0.0;
+    //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
-        if (p->size.d > QSIZE_EPS) {
-            dev = floor(p->dev * gamma_k);
-            pop->completed.d += p->size.d * (1.0 - (cfun)(gamma_k - dev - 1, gamma_theta));
+        for (gamma_i = 0; gamma_i < gamma_size; gamma_i++) {
+            gamma_k = gamma_ks[gamma_i];
+            gamma_theta = gamma_thetas[gamma_i];
+            gamma_p = gamma_ps[gamma_i];
+            gamma_psize = gamma_p * p->size.d;
+            printf("Node: %g %g %g %g\n",gamma_k,gamma_theta,gamma_p,gamma_psize);
             //
-            for (acc = dev; acc < gamma_k; acc++) {
-                item.d = p->size.d * ((cfun)(acc - dev, gamma_theta) -
-                                      (acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta)));
-                accd = p->dev + ((double) (acc - dev) / gamma_k);
+            if (gamma_psize > QSIZE_EPS) {
+                dev = floor(p->dev * gamma_k);
+                pop->completed.d += gamma_psize * (1.0 - (cfun)(gamma_k - dev - 1, gamma_theta));
                 //
-                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-                //
-                if (item.d) {
-                    qnt = qunit_new(accd, item);
-                    if (!qnt) return 1;
-                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                    if (pp)
-                        pp->size.d += item.d;
-                    else {
-                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                        counter++;
+                for (acc = dev; acc < gamma_k; acc++) {
+                    item.d = gamma_psize *
+                             ((cfun)(acc - dev, gamma_theta) - (acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta)));
+                    accd = p->dev + ((double) (acc - dev) / gamma_k);
+                    //
+                    if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                    //
+                    if (item.d) {
+                        qnt = qunit_new(accd, item);
+                        if (!qnt) return 1;
+                        HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                        if (pp)
+                            pp->size.d += item.d;
+                        else {
+                            HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                            counter++;
+                        }
+                        pop->size.d += item.d;
                     }
-                    pop->size.d += item.d;
                 }
             }
         }
         //
         HASH_DEL(pop->devc, p);
         free(p);
-    };
+    }
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
@@ -385,8 +423,10 @@ char quant_iterate_deterministic(quant pop,
 char quant_iterate(quant pop,
                    double dev_mean,       // mean development time
                    double dev_sd) {       // sd development time
-    double gamma_k = 0.0,
-            gamma_theta = 0.0;
+    double gamma_k[2] = {0.0, 0.0},
+           gamma_theta[2] = {0.0, 0.0},
+           gamma_p[2] = {1.0, 0.0};
+    unsigned int gamma_i = 1;
     char pdist = pop->pdist;
     pfunc cfun = pop->cfun;
     if (dev_sd == 0) {
@@ -395,70 +435,62 @@ char quant_iterate(quant pop,
     }
     switch (pdist) {
         case MODE_ACCP_ERLANG:
-            gamma_theta = dev_sd * dev_sd / dev_mean;
-            gamma_k = dev_mean / gamma_theta;
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                /*
-                double m = gamma_k * gamma_theta;
-                double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            gamma_theta[0] = dev_sd * dev_sd / dev_mean;
+            gamma_k[0] = dev_mean / gamma_theta[0];
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
             break;
         case MODE_ACCP_GAMMA:
-            gamma_theta = dev_sd * dev_sd / dev_mean;
-            gamma_k = dev_mean / gamma_theta;
-            // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                /*
-                double m = gamma_k * gamma_theta;
-                double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            gamma_theta[0] = dev_sd * dev_sd / dev_mean;
+            gamma_k[0] = dev_mean / gamma_theta[0];
+            if (gamma_k[0] != round(gamma_k[0])) {
+                static double k;
+                gamma_i = 2;
+                k = gamma_k[0];
+                gamma_k[1] = ceil(gamma_k[0]);
+                gamma_k[0] = floor(gamma_k[0]);
+                gamma_p[0] = (gamma_k[1]-k) / (gamma_k[1]-gamma_k[0]);
+                gamma_p[1] = 1.0 - gamma_p[0];
+                gamma_theta[0] = dev_mean / gamma_k[0];
+                gamma_theta[1] = dev_mean / gamma_k[1];
+                printf("Gamma: %g %g, %g %g, %g %g\n",
+                       gamma_k[0],
+                       gamma_k[1],
+                       gamma_p[0],
+                       gamma_p[1],
+                       gamma_theta[0],
+                       gamma_theta[1]
+                       );
             }
             break;
         case MODE_ACCP_FIXED:
-            gamma_k = round(dev_mean);
-            gamma_theta = 1.0;
+            gamma_k[0] = round(dev_mean);
+            gamma_theta[0] = 1.0;
             break;
         case MODE_ACCP_CASWELL:
-            // gamma_theta = dev_mean / (dev_mean + (dev_sd * dev_sd));
-            gamma_theta = dev_mean / (dev_sd * dev_sd);
-            if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
+            // gamma_theta[0] = dev_mean / (dev_mean + (dev_sd * dev_sd));
+            gamma_theta[0] = dev_mean / (dev_sd * dev_sd);
+            if (gamma_theta[0] >= 1.0 || gamma_theta[0] == 0.0) {
                 printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
                 return 1;
             }
-            // gamma_k = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
-            gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
-            // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                /*
-                double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
-                double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            // gamma_k[0] = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
+            gamma_k[0] = dev_mean * gamma_theta[0] / (1.0 - gamma_theta[0]);
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
             break;
         case MODE_ACCP_PASCAL:
-            gamma_theta = dev_mean / (dev_sd * dev_sd);
-            if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
+            gamma_theta[0] = dev_mean / (dev_sd * dev_sd);
+            if (gamma_theta[0] >= 1.0 || gamma_theta[0] == 0.0) {
                 printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
                 return 1;
             }
-            gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
-            // printf("k=%.18f, theta=%.18f\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                /*
-                double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
-                double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_PASCAL distribution, the shape parameter will be adjusted to yield\nk = %.18f, theta = %.18f, Mean = %.18f, St.dev. = %.18f\n", gamma_k, gamma_theta, m, s);
-                */
+            gamma_k[0] = dev_mean * gamma_theta[0] / (1.0 - gamma_theta[0]);
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
-            // printf("p=%g, r=%g\n",gamma_theta,gamma_k);
             break;
         default:
             printf("Error: I don't know what to do with this: %d\n", pdist);
@@ -466,7 +498,7 @@ char quant_iterate(quant pop,
             break;
     }
     //
-    if (gamma_k == 0) {
+    if (gamma_k[0] == 0) { // This should be the minimum one!
         printf("Error: 0 mean is not acceptable!\n");
         return 1;
     }
@@ -480,9 +512,9 @@ char quant_iterate(quant pop,
     if (!pop->devc) return 1;
     //
     if (pop->stochastic)
-        return quant_iterate_stochastic(pop, gamma_k, gamma_theta, cfun);
+        return quant_iterate_stochastic(pop, gamma_k, gamma_theta, gamma_p, gamma_i, cfun);
     else
-        return quant_iterate_deterministic(pop, gamma_k, gamma_theta, cfun);
+        return quant_iterate_deterministic(pop, gamma_k, gamma_theta, gamma_p, gamma_i, cfun);
     //
     return 0;
 }
