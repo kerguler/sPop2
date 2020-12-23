@@ -429,6 +429,11 @@ char quant_iterate_twin_hazards(quant pop,
         HASH_DEL(pop->devc, p);
         free(p);
     }
+    /*
+     * MUST HAVE TWO ALTERNATIVE DEVELOPMENT PATHS!
+     * pop->devc0;
+     * pop->devc1;
+     */
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
