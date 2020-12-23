@@ -239,6 +239,89 @@ void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
     limit[0] = i;
 }
 
+char quant_iterate_hazards(quant pop,
+                           double gamma_k,
+                           double gamma_theta,
+                           pfunc cfun) {
+    if (pop->stochastic) {
+        pop->completed.i = 0;
+        pop->size.i = 0;
+    } else {
+        pop->completed.d = 0.0;
+        pop->size.d = 0.0;
+    }
+    //
+    unsigned int dev = 0;
+    double accd = 0.0;
+    double haz = 0.0, h0 = 0.0, h1 = 0.0;
+    qunit p = 0, tmp = 0;
+    //
+    sdnum item;
+    qunit devc = 0, qnt = 0;
+    qunit pp = 0;
+    //
+    unsigned int counter = 0;
+    HASH_ITER(hh, pop->devc, p, tmp) {
+        for (dev = 0;
+             pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
+             dev++) {
+            //
+            accd = p->dev + ((double)dev / gamma_k);
+            if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+            if (accd >= ONE) {
+                if (pop->stochastic) {
+                    pop->completed.i += p->size.i;
+                    p->size.i = 0;
+                } else {
+                    pop->completed.d += p->size.d;
+                    p->size.d = 0.0;
+                }
+                break;
+            }
+            //
+            h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta);
+            h1 = (cfun)(dev, gamma_theta);
+            haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
+            //
+            if (pop->stochastic) {
+                item.i = gsl_ran_binomial(RANDOM,
+                                          haz,
+                                          p->size.i);
+                if (!item.i) continue;
+                pop->size.i += item.i;
+                p->size.i -= item.i;
+            } else {
+                item.d = p->size.d * haz;
+                if (!item.d) continue;
+                pop->size.d += item.d;
+                p->size.d -= item.d;
+            }
+            //
+            qnt = qunit_new(accd, item);
+            if (!qnt) return 1;
+            HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+            if (pp) {
+                if (pop->stochastic)
+                    pp->size.i += item.i;
+                else
+                    pp->size.d += item.d;
+            } else {
+                HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                counter++;
+            }
+        }
+        //
+        HASH_DEL(pop->devc, p);
+        free(p);
+    }
+    pop->devc = devc;
+    //
+    if (counter > QSIZE_MAX)
+        printf("Warning: Hash size = %d\n", counter);
+    //
+    return 0;
+}
+
 char quant_iterate_twin_hazards(quant pop,
                                double *gamma_k,
                                double *gamma_theta,
@@ -270,7 +353,7 @@ char quant_iterate_twin_hazards(quant pop,
                  pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
                  acc++) {
                 //
-                accd = p->dev + ((double)dev/gamma_l + acc) / gamma_k);
+                accd = p->dev + ((double)dev/gamma_k[0]) + ((double)acc/gamma_k[1]);
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
                 if (accd >= ONE) {
                     if (pop->stochastic) {
@@ -283,9 +366,13 @@ char quant_iterate_twin_hazards(quant pop,
                     break;
                 }
                 //
-                h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta);
-                h1 = (cfun)(dev, gamma_theta);
+                h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]);
+                h1 = (cfun)(dev, gamma_theta[0]);
                 haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
+                //
+                h0 = !acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1]);
+                h1 = (cfun)(acc, gamma_theta[1]);
+                haz *= h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
                 //
                 if (pop->stochastic) {
                     item.i = gsl_ran_binomial(RANDOM,
