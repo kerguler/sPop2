@@ -29,6 +29,8 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
+#define ONE ((double)(1.0))
+
 double QSIZE_MAX = 10000.0;
 #define QSIZE_MAX_EPS   1e-3
 #define QSIZE_MAX_NONE  0.0
@@ -269,128 +271,87 @@ void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
     limit[0] = i;
 }
 
-char quant_iterate_stochastic(quant pop,
-                              double gamma_k,
-                              double gamma_theta,
-                              pfunc cfun) {
-    pop->completed.i = 0;
-    unsigned int item = 0;
+char quant_iterate_hazards(quant pop,
+                           double gamma_k,
+                           double gamma_theta,
+                           pfunc cfun) {
+    if (pop->stochastic) {
+        pop->completed.i = 0;
+        pop->size.i = 0;
+    } else {
+        pop->completed.d = 0.0;
+        pop->size.d = 0.0;
+    }
+    //
+    unsigned int dev = 0;
+    unsigned int acc = 0;
     double accd = 0.0;
+    double haz = 0.0, h0 = 0.0, h1 = 0.0;
     qunit p = 0, tmp = 0;
     //
+    sdnum item;
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
-    unsigned int dev = 0, i = 0;
-    sdnum itm;
     //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         dev = floor(p->dev * gamma_k);
-        item = gsl_ran_binomial(RANDOM,
-                                1.0 - (cfun)(gamma_k - dev - 1, gamma_theta),
-                                p->size.i);
-        p->size.i -= item;
-        pop->size.i -= item;
-        pop->completed.i += item;
-        //
-        if (p->size.i > 0) {
-            unsigned int rsize = gamma_k - dev;
-            unsigned int *vec = (unsigned int *) calloc(rsize, sizeof(unsigned int));
-            if (!vec) return 1;
-            double *prob = (double *) calloc(rsize, sizeof(double));
-            if (!prob) {
-                free(vec);
-                return 1;
-            }
-            for (i = 0; i < rsize; i++)
-                prob[i] = (cfun)(i, gamma_theta);
-            if (fun_rdist(p->size.i, prob, rsize, vec)) {
-                free(prob);
-                free(vec);
-                return 1;
-            }
-            for (i = 0; i < rsize; i++) {
-                if (!vec[i]) continue;
-                accd = p->dev + ((double) i / gamma_k);
-                //
-                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-                //
-                itm.i = vec[i];
-                if (itm.i) {
-                    qnt = qunit_new(accd, itm);
-                    if (!qnt) return 1;
-                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                    if (pp)
-                        pp->size.i += itm.i;
-                    else {
-                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                        counter++;
-                    }
-                }
-            }
-        }
-        //
-        HASH_DEL(pop->devc, p);
-        free(p);
-    };
-    //
-    if (counter > QSIZE_MAX)
-        printf("Warning: Hash size = %d\n",counter);
-    //
-    pop->devc = devc;
-    return 0;
-}
-
-char quant_iterate_deterministic(quant pop,
-                                 double gamma_k,
-                                 double gamma_theta,
-                                 pfunc cfun) {
-    pop->completed.d = 0.0;
-    unsigned int acc = 0;
-    double accd = 0.0;
-    qunit p = 0, tmp = 0;
-    //
-    pop->size.d = 0.0;
-    sdnum item;
-    unsigned int dev = 0;
-    qunit devc = 0, qnt = 0;
-    qunit pp = 0;
-    //
-    unsigned int counter = 0;
-    HASH_ITER(hh, pop->devc, p, tmp) {
-        if (p->size.d > QSIZE_EPS) {
-            dev = floor(p->dev * gamma_k);
-            pop->completed.d += p->size.d * (1.0 - (cfun)(gamma_k - dev - 1, gamma_theta));
+        for (acc = dev;
+             pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
+             acc++) {
             //
-            for (acc = dev; acc < gamma_k; acc++) {
-                item.d = p->size.d * ((cfun)(acc - dev, gamma_theta) -
-                                      (acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta)));
-                accd = p->dev + ((double) (acc - dev) / gamma_k);
-                //
-                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-                //
-                if (item.d) {
-                    qnt = qunit_new(accd, item);
-                    if (!qnt) return 1;
-                    HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-                    if (pp)
-                        pp->size.d += item.d;
-                    else {
-                        HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                        counter++;
-                    }
-                    pop->size.d += item.d;
+            accd = p->dev + ((double) (acc - dev) / gamma_k);
+            if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+            if (accd >= ONE) {
+                if (pop->stochastic) {
+                    pop->completed.i += p->size.i;
+                    p->size.i = 0;
+                } else {
+                    pop->completed.d += p->size.d;
+                    p->size.d = 0.0;
                 }
+                break;
+            }
+            //
+            h0 = acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta);
+            h1 = (cfun)(acc - dev, gamma_theta);
+            haz = h1 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
+            //
+            if (pop->stochastic) {
+                item.i = gsl_ran_binomial(RANDOM,
+                                          haz,
+                                          p->size.i);
+                if (!item.i) continue;
+                pop->size.i += item.i;
+                p->size.i -= item.i;
+            } else {
+                item.d = p->size.d * haz;
+                if (!item.d) continue;
+                pop->size.d += item.d;
+                p->size.d -= item.d;
+            }
+            //
+            qnt = qunit_new(accd, item);
+            if (!qnt) return 1;
+            HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+            if (pp) {
+                if (pop->stochastic)
+                    pp->size.i += item.i;
+                else
+                    pp->size.d += item.d;
+            } else {
+                HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                counter++;
             }
         }
         //
         HASH_DEL(pop->devc, p);
         free(p);
-    };
+    }
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
-        printf("Warning: Hash size = %d\n",counter);
+        printf("Warning: Hash size = %d\n", counter);
     //
     return 0;
 }
@@ -496,12 +457,7 @@ char quant_iterate(quant pop,
     //
     if (!pop->devc) return 1;
     //
-    if (pop->stochastic)
-        return quant_iterate_stochastic(pop, gamma_k, gamma_theta, cfun);
-    else
-        return quant_iterate_deterministic(pop, gamma_k, gamma_theta, cfun);
-    //
-    return 0;
+    return quant_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
 }
 
 char quant_survive(quant pop, double prob, sdnum *ret) {
