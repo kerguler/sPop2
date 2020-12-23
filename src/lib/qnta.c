@@ -252,7 +252,6 @@ char quant_iterate_hazards(quant pop,
     }
     //
     unsigned int dev = 0;
-    unsigned int acc = 0;
     double accd = 0.0;
     double haz = 0.0, h0 = 0.0, h1 = 0.0;
     qunit p = 0, tmp = 0;
@@ -263,12 +262,11 @@ char quant_iterate_hazards(quant pop,
     //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
-        dev = floor(p->dev * gamma_k);
-        for (acc = dev;
+        for (dev = 0;
              pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
-             acc++) {
+             dev++) {
             //
-            accd = p->dev + ((double) (acc - dev) / gamma_k);
+            accd = p->dev + ((double)dev / gamma_k);
             if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
             if (accd >= ONE) {
                 if (pop->stochastic) {
@@ -281,8 +279,8 @@ char quant_iterate_hazards(quant pop,
                 break;
             }
             //
-            h0 = acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta);
-            h1 = (cfun)(acc - dev, gamma_theta);
+            h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta);
+            h1 = (cfun)(dev, gamma_theta);
             haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
             //
             if (pop->stochastic) {
