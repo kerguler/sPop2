@@ -240,9 +240,13 @@ void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
 }
 
 char quant_iterate_hazards(quant pop,
-                           double gamma_k,
-                           double gamma_theta,
+                           double *gamma_ks,
+                           double *gamma_thetas,
+                           unsigned int size,
                            pfunc cfun) {
+    double gamma_k = gamma_ks[0];
+    double gamma_theta = gamma_thetas[0];
+    //
     if (pop->stochastic) {
         pop->completed.i = 0;
         pop->size.i = 0;
@@ -325,8 +329,10 @@ char quant_iterate_hazards(quant pop,
 char quant_iterate(quant pop,
                    double dev_mean,       // mean development time
                    double dev_sd) {       // sd development time
-    double gamma_k = 0.0,
-            gamma_theta = 0.0;
+    double gamma_k[2] = {0.0, 0.0},
+            gamma_theta[2] = {0.0, 0.0},
+            gamma_p[2] = {1.0, 0.0};
+    unsigned int gamma_i = 1;
     char pdist = pop->pdist;
     pfunc cfun = pop->cfun;
     if (dev_sd == 0) {
@@ -335,74 +341,62 @@ char quant_iterate(quant pop,
     }
     switch (pdist) {
         case MODE_ACCP_ERLANG:
-            gamma_theta = dev_sd * dev_sd / dev_mean;
-            gamma_k = dev_mean / gamma_theta;
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                gamma_theta = dev_mean / gamma_k;
-                /*
-                double m = gamma_k * gamma_theta;
-                double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            gamma_theta[0] = dev_sd * dev_sd / dev_mean;
+            gamma_k[0] = dev_mean / gamma_theta[0];
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
             break;
         case MODE_ACCP_GAMMA:
-            gamma_theta = dev_sd * dev_sd / dev_mean;
-            gamma_k = dev_mean / gamma_theta;
-            // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                gamma_theta = dev_mean / gamma_k;
-                /*
-                double m = gamma_k * gamma_theta;
-                double s = sqrt(gamma_theta * m);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            gamma_theta[0] = dev_sd * dev_sd / dev_mean;
+            gamma_k[0] = dev_mean / gamma_theta[0];
+            if (gamma_k[0] != round(gamma_k[0])) {
+                static double k;
+                gamma_i = 2;
+                k = gamma_k[0];
+                gamma_k[1] = ceil(gamma_k[0]);
+                gamma_k[0] = floor(gamma_k[0]);
+                gamma_p[0] = (gamma_k[1]-k) / (gamma_k[1]-gamma_k[0]);
+                gamma_p[1] = 1.0 - gamma_p[0];
+                gamma_theta[0] = dev_mean / gamma_k[0];
+                gamma_theta[1] = dev_mean / gamma_k[1];
+                printf("Gamma: %g %g, %g %g, %g %g\n",
+                       gamma_k[0],
+                       gamma_k[1],
+                       gamma_p[0],
+                       gamma_p[1],
+                       gamma_theta[0],
+                       gamma_theta[1]
+                );
             }
             break;
         case MODE_ACCP_FIXED:
-            gamma_k = round(dev_mean);
-            gamma_theta = 1.0;
+            gamma_k[0] = round(dev_mean);
+            gamma_theta[0] = 1.0;
             break;
         case MODE_ACCP_CASWELL:
-            // gamma_theta = dev_mean / (dev_mean + (dev_sd * dev_sd));
-            gamma_theta = dev_mean / (dev_sd * dev_sd);
-            if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
+            // gamma_theta[0] = dev_mean / (dev_mean + (dev_sd * dev_sd));
+            gamma_theta[0] = dev_mean / (dev_sd * dev_sd);
+            if (gamma_theta[0] >= 1.0 || gamma_theta[0] == 0.0) {
                 printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
                 return 1;
             }
-            // gamma_k = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
-            gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
-            // printf("k=%g, theta=%g\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                gamma_theta = dev_mean / gamma_k;
-                /*
-                double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
-                double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_ERLANG distribution, the shape parameter will be adjusted to yield\nMean = %g, St.dev. = %g\n", m, s);
-                */
+            // gamma_k[0] = (dev_mean * dev_mean) / (dev_mean + (dev_sd * dev_sd));
+            gamma_k[0] = dev_mean * gamma_theta[0] / (1.0 - gamma_theta[0]);
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
             break;
         case MODE_ACCP_PASCAL:
-            gamma_theta = dev_mean / (dev_sd * dev_sd);
-            if (gamma_theta >= 1.0 || gamma_theta == 0.0) {
+            gamma_theta[0] = dev_mean / (dev_sd * dev_sd);
+            if (gamma_theta[0] >= 1.0 || gamma_theta[0] == 0.0) {
                 printf("Error: The negative binomial cannot yield mean=%g and sd=%g\n", dev_mean, dev_sd);
                 return 1;
             }
-            gamma_k = dev_mean * gamma_theta / (1.0 - gamma_theta);
-            // printf("k=%.18f, theta=%.18f\n",gamma_k,gamma_theta);
-            if (gamma_k != round(gamma_k)) {
-                gamma_k = round(gamma_k);
-                gamma_theta = gamma_k / (dev_mean + gamma_k);
-                /*
-                double m = gamma_k * (1.0 - gamma_theta) / gamma_theta;
-                double s = sqrt(dev_mean / gamma_theta);
-                printf("For the MODE_ACCP_PASCAL distribution, the shape parameter will be adjusted to yield\nk = %.18f, theta = %.18f, Mean = %.18f, St.dev. = %.18f\n", gamma_k, gamma_theta, m, s);
-                */
+            gamma_k[0] = dev_mean * gamma_theta[0] / (1.0 - gamma_theta[0]);
+            if (gamma_k[0] != round(gamma_k[0])) {
+                gamma_k[0] = round(gamma_k[0]);
             }
-            // printf("p=%g, r=%g\n",gamma_theta,gamma_k);
             break;
         default:
             printf("Error: I don't know what to do with this: %d\n", pdist);
@@ -410,7 +404,7 @@ char quant_iterate(quant pop,
             break;
     }
     //
-    if (gamma_k == 0) {
+    if (gamma_k[0] == 0) { // This should be the minimum one!
         printf("Error: 0 mean is not acceptable!\n");
         return 1;
     }
@@ -423,7 +417,7 @@ char quant_iterate(quant pop,
     //
     if (!pop->devc) return 1;
     //
-    return quant_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
+    return quant_iterate_hazards(pop, gamma_k, gamma_theta, 1, cfun);
 }
 
 char quant_survive(quant pop, double prob, sdnum *ret) {
