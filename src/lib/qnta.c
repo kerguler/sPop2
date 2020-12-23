@@ -315,7 +315,7 @@ char quant_iterate_hazards(quant pop,
             //
             h0 = acc == dev ? 0.0 : (cfun)(acc - dev - 1, gamma_theta);
             h1 = (cfun)(acc - dev, gamma_theta);
-            haz = h1 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
+            haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
             //
             if (pop->stochastic) {
                 item.i = gsl_ran_binomial(RANDOM,
