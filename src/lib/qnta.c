@@ -73,38 +73,6 @@ double fun_cpois_C(double x, double par) {
     return gsl_sf_gamma_inc_Q(x + 1.0, 1.0 / par);
 }
 
-int aorder (const void *a, const void *b) {
-    return ( *(double *)a > *(double *)b ) ? 1 : ( ( *(double *)a < *(double *)b ) ? -1 : 0 );
-}
-
-char fun_rdist (unsigned int pop, double *p, unsigned int size, unsigned int *ret) {
-    if (!RANDOM)
-        RANDOM = get_RAND_GSL();
-    double max=0.0;
-    unsigned int i=0, j=0;
-    //
-    for (i=0; i<size; i++) ret[i] = 0;
-    max = p[size-1];
-    //
-    double *vec = (double *)calloc(pop,sizeof(double));
-    if (!vec) return 1;
-    for (i=0; i<pop; i++)
-        vec[i] = max * gsl_rng_uniform(RANDOM);
-    qsort(vec, pop, sizeof(double), aorder);
-    //
-    for (i=0, j=0; i<pop; ) {
-        if (vec[i] <= p[j]) {
-            ret[j] += 1;
-            i++;
-            continue;
-        }
-        j++;
-    }
-    //
-    free(vec);
-    return 0;
-}
-
 char quant_get_cfun(char mode, pfunc *cfun) {
     switch (mode) {
         case MODE_ACCP_ERLANG:
