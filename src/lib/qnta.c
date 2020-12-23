@@ -325,6 +325,7 @@ char quant_iterate_hazards(quant pop,
 char quant_iterate_twin_hazards(quant pop,
                                double *gamma_k,
                                double *gamma_theta,
+                               double *gamma_p,
                                pfunc cfun) {
     if (pop->stochastic) {
         pop->completed.i = 0;
@@ -336,7 +337,7 @@ char quant_iterate_twin_hazards(quant pop,
     //
     unsigned int dev = 0, acc = 0;
     double accd = 0.0;
-    double haz = 0.0, h0 = 0.0, h1 = 0.0;
+    double haz[2] = {0.0, 0.0}, h0 = 0.0, h1 = 0.0;
     qunit p = 0, tmp = 0;
     //
     sdnum item;
@@ -349,40 +350,62 @@ char quant_iterate_twin_hazards(quant pop,
              pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
              dev++) {
             //
+            accd = p->dev + ((double)dev/gamma_k[0]);
+            if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+            if (accd >= ONE) {
+                if (pop->stochastic) {
+                    pop->completed.i += p->size.i;
+                    p->size.i = 0;
+                } else {
+                    pop->completed.d += p->size.d;
+                    p->size.d = 0.0;
+                }
+                break;
+            }
+            //
+            h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]);
+            h1 = (cfun)(dev, gamma_theta[0]);
+            haz[0] = gamma_p[0] * (h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0));
+            //
             for (acc = 0;
                  pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
                  acc++) {
                 //
-                accd = p->dev + ((double)dev/gamma_k[0]) + ((double)acc/gamma_k[1]);
+                accd += p->dev + ((double)acc/gamma_k[1]);
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
                 if (accd >= ONE) {
+                    haz[1] = gamma_p[1] * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                    //
                     if (pop->stochastic) {
-                        pop->completed.i += p->size.i;
-                        p->size.i = 0;
+                        item.i = gsl_ran_binomial(RANDOM,
+                                                  (haz[0]+haz[1]),
+                                                  p->size.i);
+                        if (!item.i) continue;
+                        pop->completed.i += item.i;
+                        p->size.i -= item.i;
                     } else {
-                        pop->completed.d += p->size.d;
-                        p->size.d = 0.0;
+                        item.d = p->size.d * (haz[0]+haz[1]);
+                        if (!item.d) continue;
+                        pop->completed.d += item.d;
+                        p->size.d -= item.d;
                     }
+                    //
                     break;
                 }
                 //
-                h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]);
-                h1 = (cfun)(dev, gamma_theta[0]);
-                haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
-                //
                 h0 = !acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1]);
                 h1 = (cfun)(acc, gamma_theta[1]);
-                haz *= h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
+                haz[1] = gamma_p[1] * (h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0));
                 //
                 if (pop->stochastic) {
                     item.i = gsl_ran_binomial(RANDOM,
-                                              haz,
+                                              (haz[0]+haz[1]),
                                               p->size.i);
                     if (!item.i) continue;
                     pop->size.i += item.i;
                     p->size.i -= item.i;
                 } else {
-                    item.d = p->size.d * haz;
+                    item.d = p->size.d * (haz[0]+haz[1]);
                     if (!item.d) continue;
                     pop->size.d += item.d;
                     p->size.d -= item.d;
@@ -508,7 +531,7 @@ char quant_iterate(quant pop,
     if (gamma_i == 1)
         return quant_iterate_hazards(pop, gamma_k[0], gamma_theta[0], cfun);
     else
-        return quant_iterate_twin_hazards(pop, gamma_k, gamma_theta, cfun);
+        return quant_iterate_twin_hazards(pop, gamma_k, gamma_theta, gamma_p, cfun);
 }
 
 char quant_survive(quant pop, double prob, sdnum *ret) {
