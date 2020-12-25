@@ -356,19 +356,19 @@ char quant_iterate_twin_hazards(quant pop,
                 accd = p->dev + ((double) dev / gamma_k[0]) + ((double) acc / gamma_k[1]);
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
                 //
-                h0 = gamma_p[0] * ((cfun)(dev, gamma_theta[0]) - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                h0 = pow(gamma_p[0],dev+1) * ((cfun)(dev, gamma_theta[0]) - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
                 haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
                 //
                 if (accd >= ONE) {
                     if (!acc) {
-                        h0 = gamma_p[0] * (ONE - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                        h0 = pow(gamma_p[0],dev+1) * (ONE - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
                         haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
                         printf("h0 = %g %g %g\n",h0,gamma_p[0],gamma_theta[0]);
                     }
-                    h1 = gamma_p[1] * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                    h1 = pow(gamma_p[1],acc+1) * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
                     haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
                     //
-                    ha += h0 * h1;
+                    ha += h0 + h1;
                     printf("C: dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n",dev,acc,accd,(pop->stochastic ? (double)(p->size.i) : p->size.d),h0,h1,ha);
                     //
                     if (pop->stochastic) {
@@ -388,10 +388,10 @@ char quant_iterate_twin_hazards(quant pop,
                     break;
                 }
                 //
-                h1 = gamma_p[1] * ((cfun)(acc, gamma_theta[1]) - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                h1 = pow(gamma_p[1],acc+1) * ((cfun)(acc, gamma_theta[1]) - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
                 haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
                 //
-                ha += h0 * h1;
+                ha += h0 + h1;
                 printf(" : dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n",dev,acc,accd,(pop->stochastic ? (double)(p->size.i) : p->size.d),h0,h1,ha);
                 //
                 if (pop->stochastic) {
