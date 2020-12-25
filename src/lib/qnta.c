@@ -233,7 +233,6 @@ void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
     HASH_ITER(hh, s->devc, p, tmp) {
         dev[i] = p->dev;
         size[i] = s->stochastic ? (double)(p->size.i) : p->size.d;
-        printf("Retrieve %d %g %g\n",i,dev[i],size[i]);
         i++;
     }
     limit[0] = i;
@@ -337,7 +336,7 @@ char quant_iterate_twin_hazards(quant pop,
     //
     unsigned int dev = 0, acc = 0;
     double accd = 0.0;
-    double haz[2] = {0.0, 0.0}, h0 = 0.0, h1 = 0.0;
+    double haz[2] = {0.0, 0.0}, h0 = 0.0, h1 = 0.0, ha = 0.0;
     qunit p = 0, tmp = 0;
     //
     sdnum item;
@@ -347,44 +346,40 @@ char quant_iterate_twin_hazards(quant pop,
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         for (dev = 0;
-             pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
+             (dev < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
              dev++) {
             //
-            accd = p->dev + ((double)dev/gamma_k[0]);
-            if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-            if (accd >= ONE) {
-                if (pop->stochastic) {
-                    pop->completed.i += p->size.i;
-                    p->size.i = 0;
-                } else {
-                    pop->completed.d += p->size.d;
-                    p->size.d = 0.0;
-                }
-                break;
-            }
-            //
-            h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]);
-            h1 = (cfun)(dev, gamma_theta[0]);
-            haz[0] = gamma_p[0] * (h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0));
-            //
             for (acc = 0;
-                 pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
+                 (acc < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
                  acc++) {
                 //
-                accd += p->dev + ((double)acc/gamma_k[1]);
+                accd = p->dev + ((double) dev / gamma_k[0]) + ((double) acc / gamma_k[1]);
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                //
+                h0 = gamma_p[0] * ((cfun)(dev, gamma_theta[0]) - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
+                //
                 if (accd >= ONE) {
-                    haz[1] = gamma_p[1] * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                    if (!acc) {
+                        h0 = gamma_p[0] * (ONE - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                        haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
+                        printf("h0 = %g %g %g\n",h0,gamma_p[0],gamma_theta[0]);
+                    }
+                    h1 = gamma_p[1] * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                    haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
+                    //
+                    ha += h0 * h1;
+                    printf("C: dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n",dev,acc,accd,(pop->stochastic ? (double)(p->size.i) : p->size.d),h0,h1,ha);
                     //
                     if (pop->stochastic) {
                         item.i = gsl_ran_binomial(RANDOM,
-                                                  (haz[0]+haz[1]),
+                                                  (haz[0] + haz[1]),
                                                   p->size.i);
                         if (!item.i) continue;
                         pop->completed.i += item.i;
                         p->size.i -= item.i;
                     } else {
-                        item.d = p->size.d * (haz[0]+haz[1]);
+                        item.d = p->size.d * (haz[0] + haz[1]);
                         if (!item.d) continue;
                         pop->completed.d += item.d;
                         p->size.d -= item.d;
@@ -393,19 +388,21 @@ char quant_iterate_twin_hazards(quant pop,
                     break;
                 }
                 //
-                h0 = !acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1]);
-                h1 = (cfun)(acc, gamma_theta[1]);
-                haz[1] = gamma_p[1] * (h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0));
+                h1 = gamma_p[1] * ((cfun)(acc, gamma_theta[1]) - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
+                //
+                ha += h0 * h1;
+                printf(" : dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n",dev,acc,accd,(pop->stochastic ? (double)(p->size.i) : p->size.d),h0,h1,ha);
                 //
                 if (pop->stochastic) {
                     item.i = gsl_ran_binomial(RANDOM,
-                                              (haz[0]+haz[1]),
+                                              (haz[0] + haz[1]),
                                               p->size.i);
                     if (!item.i) continue;
                     pop->size.i += item.i;
                     p->size.i -= item.i;
                 } else {
-                    item.d = p->size.d * (haz[0]+haz[1]);
+                    item.d = p->size.d * (haz[0] + haz[1]);
                     if (!item.d) continue;
                     pop->size.d += item.d;
                     p->size.d -= item.d;
@@ -466,7 +463,7 @@ char quant_iterate(quant pop,
         case MODE_ACCP_GAMMA:
             gamma_theta[0] = dev_sd * dev_sd / dev_mean;
             gamma_k[0] = dev_mean / gamma_theta[0];
-            if (gamma_k[0] != round(gamma_k[0])) {
+            if (1) { // gamma_k[0] != round(gamma_k[0])) {
                 static double k;
                 gamma_i = 2;
                 k = gamma_k[0];
@@ -474,6 +471,12 @@ char quant_iterate(quant pop,
                 gamma_k[0] = floor(gamma_k[0]);
                 gamma_p[0] = (gamma_k[1]-k) / (gamma_k[1]-gamma_k[0]);
                 gamma_p[1] = 1.0 - gamma_p[0];
+                //
+                gamma_k[1] = round(gamma_k[0]);
+                gamma_k[0] = round(gamma_k[0]);
+                gamma_p[0] = 0.5;
+                gamma_p[1] = 0.5;
+                //
                 gamma_theta[0] = dev_mean / gamma_k[0];
                 gamma_theta[1] = dev_mean / gamma_k[1];
                 printf("Gamma: %g %g, %g %g, %g %g\n",
