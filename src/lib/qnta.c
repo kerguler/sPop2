@@ -103,7 +103,7 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     //
     quant pop = (quant) calloc(1, sizeof(struct quant_st));
     if (!pop) return 0;
-    pop->devc = 0;
+    pop->devc = {0, 0};
     pop->stochastic = stochastic;
     pop->pdist = pdist;
     if (!quant_get_cfun(pop->pdist,&(pop->cfun))) return 0;
@@ -119,10 +119,15 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
 }
 
 char quant_empty(quant s) {
+    unsigned int i;
     qunit p, tmp;
-    HASH_ITER(hh, s->devc, p, tmp) {
-        HASH_DEL(s->devc, p);
-        free(p);
+    for (i=0; i<2; i++) {
+        if (s->devc[i]) {
+            HASH_ITER(hh, s->devc[i], p, tmp) {
+                HASH_DEL(s->devc[i], p);
+                free(p);
+            }
+        }
     }
     //
     if (s->stochastic) {
@@ -218,30 +223,43 @@ void quant_print(quant s) {
            s->stochastic,
            s->stochastic ? s->size.i : s->size.d,
            s->stochastic ? s->completed.i : s->completed.d);
+    unsigned int i;
     qunit p, tmp;
-    HASH_ITER(hh, s->devc, p, tmp) {
-        printf("%g,%g\n",
-               p->dev,
-               s->stochastic ? p->size.i : p->size.d);
+    for (i=0; i<2; i++) {
+        if (s->devc[i]) {
+            HASH_ITER(hh, s->devc[i], p, tmp) {
+                printf("%g,%g\n",
+                       p->dev,
+                       s->stochastic ? p->size.i : p->size.d);
+            }
+        }
     }
 }
 
 void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
     if (!s) return;
     unsigned int i = 0;
+    unsigned int j;
     qunit p, tmp;
-    HASH_ITER(hh, s->devc, p, tmp) {
-        dev[i] = p->dev;
-        size[i] = s->stochastic ? (double)(p->size.i) : p->size.d;
-        i++;
+    for (j=0; j<2; j++) {
+        if (s->devc[j]) {
+            HASH_ITER(hh, s->devc[j], p, tmp) {
+                dev[i] = p->dev;
+                size[i] = s->stochastic ? (double) (p->size.i) : p->size.d;
+                i++;
+            }
+        }
     }
     limit[0] = i;
 }
 
 char quant_iterate_hazards(quant pop,
+                           unsigned int devi,
                            double gamma_k,
                            double gamma_theta,
                            pfunc cfun) {
+    if (!(pop->devc[devi])) return 0;
+    //
     unsigned int dev = 0;
     double accd = 0.0;
     double haz = 0.0, h0 = 0.0, h1 = 0.0;
@@ -252,7 +270,7 @@ char quant_iterate_hazards(quant pop,
     qunit pp = 0;
     //
     unsigned int counter = 0;
-    HASH_ITER(hh, pop->devc, p, tmp) {
+    HASH_ITER(hh, pop->devc[devi], p, tmp) {
         for (dev = 0;
              pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS;
              dev++) {
@@ -302,10 +320,10 @@ char quant_iterate_hazards(quant pop,
             }
         }
         //
-        HASH_DEL(pop->devc, p);
+        HASH_DEL(pop->devc[devi], p);
         free(p);
     }
-    pop->devc = devc;
+    pop->devc[devi] = devc;
     //
     if (counter > QSIZE_MAX)
         printf("Warning: Hash size = %d\n", counter);
@@ -408,8 +426,6 @@ char quant_iterate(quant pop,
         pop->completed.d = 0.0;
     }
     //
-    if (!pop->devc) return 1;
-    //
     if (pop->stochastic) {
         pop->completed.i = 0;
         pop->size.i = 0;
@@ -418,10 +434,14 @@ char quant_iterate(quant pop,
         pop->size.d = 0.0;
     }
     //
-    if (gamma_i == 1)
-        return quant_iterate_hazards(pop, gamma_k[0], gamma_theta[0], cfun);
-    else
-        return quant_iterate_twin_hazards(pop, gamma_k, gamma_theta, gamma_p, cfun);
+    if (gamma_i == 1) {
+        if (!pop->devc[0]) return 1;
+        return quant_iterate_hazards(pop, 0, gamma_k[0], gamma_theta[0], cfun);
+    } else {
+        if (!pop->devc[0] || !pop->devc[1]) return 1;
+        return quant_iterate_hazards(pop, 0, gamma_k[0], gamma_theta[0], cfun) +
+               quant_iterate_hazards(pop, 1, gamma_k[1], gamma_theta[1], cfun);
+    }
 }
 
 char quant_survive(quant pop, double prob, sdnum *ret) {
@@ -429,32 +449,41 @@ char quant_survive(quant pop, double prob, sdnum *ret) {
     ret->d = 0.0;
     pop->completed.i = 0;
     pop->completed.d = 0.0;
+    unsigned int i;
     sdnum item;
     qunit p, tmp;
     if (pop->stochastic) {
-        HASH_ITER(hh, pop->devc, p, tmp) {
-            if (!(p->size.i)) continue;
-            item.i = gsl_ran_binomial(RANDOM,
-                                      prob,
-                                      p->size.i);
-            p->size.i -= item.i;
-            pop->size.i -= item.i;
-            ret->i += item.i;
-            if (!(p->size.i)) {
-                HASH_DEL(pop->devc, p);
-                free(p);
+        for (i=0; i<2; i++) {
+            if (pop->devc[i]) {
+                HASH_ITER(hh, pop->devc[i], p, tmp) {
+                    if (!(p->size.i)) continue;
+                    item.i = gsl_ran_binomial(RANDOM,
+                                              prob,
+                                              p->size.i);
+                    p->size.i -= item.i;
+                    pop->size.i -= item.i;
+                    ret->i += item.i;
+                    if (!(p->size.i)) {
+                        HASH_DEL(pop->devc[i], p);
+                        free(p);
+                    }
+                }
             }
         }
     } else {
-        HASH_ITER(hh, pop->devc, p, tmp) {
-            if (!(p->size.d)) continue;
-            item.d = p->size.d * prob;
-            p->size.d -= item.d;
-            pop->size.d -= item.d;
-            ret->d += item.d;
-            if (!(p->size.d)) {
-                HASH_DEL(pop->devc, p);
-                free(p);
+        for (i=0; i<2; i++) {
+            if (pop->devc[i]) {
+                HASH_ITER(hh, pop->devc[i], p, tmp) {
+                    if (!(p->size.d)) continue;
+                    item.d = p->size.d * prob;
+                    p->size.d -= item.d;
+                    pop->size.d -= item.d;
+                    ret->d += item.d;
+                    if (!(p->size.d)) {
+                        HASH_DEL(pop->devc[i], p);
+                        free(p);
+                    }
+                }
             }
         }
     }
