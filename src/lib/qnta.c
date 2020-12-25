@@ -29,6 +29,8 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
+#define TAU 1.0
+
 #define ONE ((double)(1.0))
 
 double QSIZE_MAX = 10000.0;
@@ -54,7 +56,7 @@ double QSIZE_ROUND(double val) {
 gsl_rng *RANDOM = 0;
 
 double fun_pois_C(double x, double par) {
-    return gsl_cdf_poisson_P((unsigned int)x, 1.0/par);
+    return gsl_cdf_poisson_P((unsigned int)x, ONE/par);
 }
 
 double fun_fixed_C(double x, double par) {
@@ -62,15 +64,15 @@ double fun_fixed_C(double x, double par) {
 }
 
 double fun_Caswell_C(double x, double par) {
-    return ((unsigned int)x == 0) ? 1.0-par : 1.0;
+    return ((unsigned int)x == 0) ? ONE - par : ONE;
 }
 
 double fun_unif_C(double x, double par) {
-    return 1.0-pow(par, x+1.0);
+    return ONE - pow(par, x + ONE);
 }
 
 double fun_cpois_C(double x, double par) {
-    return gsl_sf_gamma_inc_Q(x + 1.0, 1.0 / par);
+    return gsl_sf_gamma_inc_Q((x/TAU) + ONE, ONE / par);
 }
 
 char quant_get_cfun(char mode, pfunc *cfun) {
@@ -348,6 +350,9 @@ char quant_iterate(quant pop,
                 gamma_k = round(gamma_k);
                 gamma_theta = dev_mean / gamma_k;
             }
+            //
+            gamma_k *= TAU;
+            //
             break;
         case MODE_ACCP_FIXED:
             gamma_k = round(dev_mean);
