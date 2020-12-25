@@ -29,8 +29,6 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 }
 */
 
-#define TAU 1.0
-
 #define ONE ((double)(1.0))
 
 double QSIZE_MAX = 10000.0;
@@ -72,7 +70,7 @@ double fun_unif_C(double x, double par) {
 }
 
 double fun_cpois_C(double x, double par) {
-    return gsl_sf_gamma_inc_Q((x/TAU) + ONE, ONE / par);
+    return gsl_sf_gamma_inc_Q(x + ONE, ONE / par);
 }
 
 char quant_get_cfun(char mode, pfunc *cfun) {
@@ -350,9 +348,6 @@ char quant_iterate(quant pop,
                 gamma_k = round(gamma_k);
                 gamma_theta = dev_mean / gamma_k;
             }
-            //
-            gamma_k *= TAU;
-            //
             break;
         case MODE_ACCP_FIXED:
             gamma_k = round(dev_mean);
