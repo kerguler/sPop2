@@ -258,7 +258,17 @@ char quant_iterate_hazards(quant pop,
                            double gamma_k,
                            double gamma_theta,
                            pfunc cfun) {
+<<<<<<< HEAD
     if (!(pop->devc[devi])) return 0;
+=======
+    if (pop->stochastic) {
+        pop->completed.i = 0;
+        pop->size.i = 0;
+    } else {
+        pop->completed.d = 0.0;
+        pop->size.d = 0.0;
+    }
+>>>>>>> parent of 04a4f3c... won't compile
     //
     unsigned int dev = 0;
     double accd = 0.0;
@@ -453,6 +463,128 @@ char quant_iterate_twin_hazards(quant pop,
     return 0;
 }
 
+char quant_iterate_twin_hazards(quant pop,
+                               double *gamma_k,
+                               double *gamma_theta,
+                               double *gamma_p,
+                               pfunc cfun) {
+    if (pop->stochastic) {
+        pop->completed.i = 0;
+        pop->size.i = 0;
+    } else {
+        pop->completed.d = 0.0;
+        pop->size.d = 0.0;
+    }
+    //
+    unsigned int dev = 0, acc = 0;
+    double accd = 0.0;
+    double haz[2] = {0.0, 0.0}, h0 = 0.0, h1 = 0.0, ha = 0.0;
+    qunit p = 0, tmp = 0;
+    //
+    sdnum item;
+    qunit devc = 0, qnt = 0;
+    qunit pp = 0;
+    //
+    unsigned int counter = 0;
+    HASH_ITER(hh, pop->devc, p, tmp) {
+        for (dev = 0;
+             (dev < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
+             dev++) {
+            //
+            for (acc = 0;
+                 (acc < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
+                 acc++) {
+                //
+                accd = p->dev + ((double) dev / gamma_k[0]) + ((double) acc / gamma_k[1]);
+                if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
+                //
+                h0 = pow(gamma_p[0], dev + 1) *
+                     ((cfun)(dev, gamma_theta[0]) - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
+                //
+                if (accd >= ONE) {
+                    if (!acc) {
+                        h0 = pow(gamma_p[0], dev + 1) * (ONE - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0])));
+                        haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
+                        printf("h0 = %g %g %g\n", h0, gamma_p[0], gamma_theta[0]);
+                    }
+                    h1 = pow(gamma_p[1], acc + 1) * (ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                    haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
+                    //
+                    ha += h0 + h1;
+                    printf("C: dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n", dev, acc, accd,
+                           (pop->stochastic ? (double) (p->size.i) : p->size.d), h0, h1, ha);
+                    //
+                    if (pop->stochastic) {
+                        item.i = gsl_ran_binomial(RANDOM,
+                                                  (haz[0] + haz[1]),
+                                                  p->size.i);
+                        if (!item.i) continue;
+                        pop->completed.i += item.i;
+                        p->size.i -= item.i;
+                    } else {
+                        item.d = p->size.d * (haz[0] + haz[1]);
+                        if (!item.d) continue;
+                        pop->completed.d += item.d;
+                        p->size.d -= item.d;
+                    }
+                    //
+                    break;
+                }
+                //
+                h1 = pow(gamma_p[1], acc + 1) *
+                     ((cfun)(acc, gamma_theta[1]) - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1])));
+                haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
+                //
+                ha += h0 + h1;
+                printf(" : dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n", dev, acc, accd,
+                       (pop->stochastic ? (double) (p->size.i) : p->size.d), h0, h1, ha);
+                //
+                if (pop->stochastic) {
+                    item.i = gsl_ran_binomial(RANDOM,
+                                              (haz[0] + haz[1]),
+                                              p->size.i);
+                    if (!item.i) continue;
+                    pop->size.i += item.i;
+                    p->size.i -= item.i;
+                } else {
+                    item.d = p->size.d * (haz[0] + haz[1]);
+                    if (!item.d) continue;
+                    pop->size.d += item.d;
+                    p->size.d -= item.d;
+                }
+                //
+                qnt = qunit_new(accd, item);
+                if (!qnt) return 1;
+                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                if (pp) {
+                    if (pop->stochastic)
+                        pp->size.i += item.i;
+                    else
+                        pp->size.d += item.d;
+                } else {
+                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                    counter++;
+                }
+            }
+        }
+        //
+        HASH_DEL(pop->devc, p);
+        free(p);
+    }
+    /*
+     * MUST HAVE TWO ALTERNATIVE DEVELOPMENT PATHS!
+     * pop->devc0;
+     * pop->devc1;
+     */
+    pop->devc = devc;
+    //
+    if (counter > QSIZE_MAX)
+        printf("Warning: Hash size = %d\n", counter);
+    //
+    return 0;
+}
+
 char quant_iterate(quant pop,
                    double dev_mean,       // mean development time
                    double dev_sd) {       // sd development time
@@ -548,6 +680,7 @@ char quant_iterate(quant pop,
         pop->completed.d = 0.0;
     }
     //
+<<<<<<< HEAD
     if (pop->stochastic) {
         pop->completed.i = 0;
         pop->size.i = 0;
@@ -564,6 +697,14 @@ char quant_iterate(quant pop,
         return quant_iterate_hazards(pop, 0, gamma_k[0], gamma_theta[0], cfun) +
                quant_iterate_hazards(pop, 1, gamma_k[1], gamma_theta[1], cfun);
     }
+=======
+    if (!pop->devc) return 1;
+    //
+    if (gamma_i == 1)
+        return quant_iterate_hazards(pop, gamma_k[0], gamma_theta[0], cfun);
+    else
+        return quant_iterate_twin_hazards(pop, gamma_k, gamma_theta, gamma_p, cfun);
+>>>>>>> parent of 04a4f3c... won't compile
 }
 
 char quant_survive(quant pop, double prob, sdnum *ret) {

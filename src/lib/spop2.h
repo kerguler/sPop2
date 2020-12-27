@@ -40,7 +40,7 @@ struct qunit_st {
 typedef double (*pfunc)(double, double);
 
 struct quant_st {
-    qunit devc[2];
+    qunit devc;
     sdnum size;
     sdnum completed;
     unsigned char stochastic;
