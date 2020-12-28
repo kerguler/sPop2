@@ -32,19 +32,10 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 #define ONE ((double)(1.0))
 
 double QSIZE_MAX = 10000.0;
-#define QSIZE_MAX_EPS   1e-3
-#define QSIZE_MAX_NONE  0.0
-
-double QSIZE_ROUND_EPS = QSIZE_MAX_NONE;
+double QSIZE_ROUND_EPS = 0.0;
 double QSIZE_EPS = 0.0;
-void set_APPROX(char on) {
-    if (on) {
-        QSIZE_ROUND_EPS = QSIZE_MAX_EPS;
-        // QSIZE_EPS = 1e-8;
-    } else {
-        QSIZE_ROUND_EPS = QSIZE_MAX_NONE;
-        // QSIZE_EPS = 0.0;
-    }
+void set_APPROX(double eps) {
+    QSIZE_ROUND_EPS = eps;
 }
 
 double QSIZE_ROUND(double val) {
