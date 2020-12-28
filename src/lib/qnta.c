@@ -340,80 +340,62 @@ char quant_iterate_twin_hazards(quant pop,
         pop->size.d = 0.0;
     }
     //
-    unsigned int dev = 0, acc = 0;
+    unsigned int dev = 0;
     double accd = 0.0;
-    double haz[2] = {0.0, 0.0}, h0 = 0.0, h1 = 0.0, ha = 0.0;
+    double haz = 0.0, h0 = 0.0, h1 = 0.0;
     qunit p = 0, tmp = 0;
     //
     sdnum item;
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
     //
+    unsigned int i;
+    sdnum size[2];
+    //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
-        for (dev = 0;
-             (dev < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
-             dev++) {
-            //
-            for (acc = 0;
-                 (acc < 10) && (pop->stochastic ? p->size.i > 0 : p->size.d > QSIZE_EPS);
-                 acc++) {
+        if (pop->stochastic) {
+            size[0].i = gsl_ran_binomial(RANDOM, gamma_p[0], p->size.i);
+            size[1].i = p->size.i - size[0].i;
+            printf("size %d %d\n",size[0].i,size[1].i);
+        } else {
+            size[0].d = p->size.d * gamma_p[0];
+            size[1].d = p->size.d - size[0].d;
+            printf("size %g %g\n",size[0].d,size[1].d);
+        }
+        //
+        for (i = 0; i < 2; i++) {
+            for (dev = 0;
+                 pop->stochastic ? size[i].i > 0 : size[i].d > QSIZE_EPS;
+                 dev++) {
                 //
-                accd = p->dev + ((double) dev / gamma_k[0]) + ((double) acc / gamma_k[1]);
+                accd = p->dev + ((double) dev / gamma_k[i]);
                 if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-                //
-                h0 = (cfun)(dev, gamma_theta[0]) - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]));
-                haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
-                //
                 if (accd >= ONE) {
-                    if (!acc) {
-                        h0 = ONE - (!dev ? 0.0 : (cfun)(dev - 1, gamma_theta[0]));
-                        haz[0] = (ha >= ONE ? 1.0 : h0 / (ONE - ha));
-                        printf("h0 = %g %g %g\n", h0, gamma_p[0], gamma_theta[0]);
-                    }
-                    h1 = ONE - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1]));
-                    haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
-                    //
-                    ha += h0 * h1;
-                    printf("C: dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n", dev, acc, accd,
-                           (pop->stochastic ? (double) (p->size.i) : p->size.d), h0, h1, ha);
-                    //
                     if (pop->stochastic) {
-                        item.i = gsl_ran_binomial(RANDOM,
-                                                  (haz[0] * haz[1]),
-                                                  p->size.i);
-                        if (!item.i) continue;
-                        pop->completed.i += item.i;
-                        p->size.i -= item.i;
+                        pop->completed.i += size[i].i;
+                        size[i].i = 0;
                     } else {
-                        item.d = p->size.d * (haz[0] * haz[1]);
-                        if (!item.d) continue;
-                        pop->completed.d += item.d;
-                        p->size.d -= item.d;
+                        pop->completed.d += size[i].d;
+                        size[i].d = 0.0;
                     }
-                    //
                     break;
                 }
                 //
-                h1 = (cfun)(acc, gamma_theta[1]) - (!acc ? 0.0 : (cfun)(acc - 1, gamma_theta[1]));
-                haz[1] = (ha >= ONE ? 1.0 : h1 / (ONE - ha));
-                //
-                ha += h0 * h1;
-                printf(" : dev = %d acc = %d accd = %g size = %g ha += %g * %g = %g\n", dev, acc, accd,
-                       (pop->stochastic ? (double) (p->size.i) : p->size.d), h0, h1, ha);
+                h0 = !dev ? 0.0 : (cfun)(dev - 1, gamma_theta[i]);
+                h1 = (cfun)(dev, gamma_theta[i]);
+                haz = h0 == ONE ? 1.0 : (h1 - h0) / (ONE - h0);
                 //
                 if (pop->stochastic) {
-                    item.i = gsl_ran_binomial(RANDOM,
-                                              (haz[0] * haz[1]),
-                                              p->size.i);
+                    item.i = gsl_ran_binomial(RANDOM, haz, size[i].i);
                     if (!item.i) continue;
                     pop->size.i += item.i;
-                    p->size.i -= item.i;
+                    size[i].i -= item.i;
                 } else {
-                    item.d = p->size.d * (haz[0] * haz[1]);
+                    item.d = size[i].d * haz;
                     if (!item.d) continue;
                     pop->size.d += item.d;
-                    p->size.d -= item.d;
+                    size[i].d -= item.d;
                 }
                 //
                 qnt = qunit_new(accd, item);
