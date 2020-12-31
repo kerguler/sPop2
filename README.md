@@ -29,15 +29,15 @@ Including the created library with your project.
 
 **C code snippet**
 
-*This example can be found in `example/`.*
+*This example can be found in `examples/`.*
 
 ```c
 #include "spop2/spop2.h"
-spop pop = spop_init(0,MODE_ACCP_ERLANG);
-spop_add(pop,0,0,0,0,1000);
+spop pop = spop_init(0, MODE_ACCP_ERLANG);
+spop_add(pop, 0, 0, 0, 0, 1000);
 spop_iterate(pop,
-             0,0,0,0,
-             0,20,10,0,
+             0, 10, 5, 0,
+             0.25, 0, 0, 0,
              0);
 spop_print(pop);
 spop_destroy(&pop);
