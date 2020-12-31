@@ -1,12 +1,3 @@
-/**
- * This is an example file for spop2
- * ----------------------------------------------
- * Compile with:
- * $ gcc -Wall -lm -lspop2 -lgsl -o example_acc1_simple example_acc1_simple.c
- * Execute:
- * ./example_acc1_simple
- */
-
 #include "spop2/spop2.h"
 
 int main(void) {

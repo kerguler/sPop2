@@ -4,7 +4,7 @@ Using the sPop2 library to develop a population dynamics model.
 
 **C code snippet**
 
-*example_acc1_simple.c*
+*ex1_simple.c*
 
 ```c
 #include "spop2/spop2.h"
@@ -16,4 +16,11 @@ spop_iterate(pop,
              0);
 spop_print(pop);
 spop_destroy(&pop);
+```
+
+**Compile and run**
+
+```shell script
+ $ gcc -Wall -lm -lspop2 -lgsl -o ex1_simple ex1_simple.c
+ $ ./ex1_simple
 ```
