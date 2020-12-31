@@ -1,6 +1,10 @@
-# sPop2: an age-structured population dynamics model
+<p>Testing the HTML part of this with a <a href="https://github.com/kerguler/sPop2" target="_blank">link</a></p>
+<p>What about an image?</p>
+<img src="docs/figures/large_scale_PDM.jpg"></img>
 
-This is the standalone C library of the age structured population dynamics model sPop2.
+# sPop2: a dynamically-structured matrix population model
+
+This is the standalone C library of the dynamically-structured matrix population model sPop2.
 This version implements both hazard-based and accumulative processes in development and survival.
 
 ## Installation
@@ -30,7 +34,7 @@ Including the created library with your project.
 
 **C code snippet**
 
-*This example can be found in `examples/`.*
+*This example can be found in `docs/examples/`.*
 
 ```c
 #include "spop2/spop2.h"
