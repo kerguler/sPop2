@@ -1,9 +1,8 @@
-<p>Testing the HTML part of this with a <a href="https://github.com/kerguler/sPop2" target="_blank">link</a></p>
+# sPop2: a dynamically-structured matrix population model
+
 <p align="center">
 <img width="340" height=300" src="docs/figures/large_scale_PDM.jpg"/>
 </p>
-
-# sPop2: a dynamically-structured matrix population model
 
 This is the standalone C library of the dynamically-structured matrix population model sPop2.
 This version implements both hazard-based and accumulative processes in development and survival.
