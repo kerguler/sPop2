@@ -1,6 +1,6 @@
 <p>Testing the HTML part of this with a <a href="https://github.com/kerguler/sPop2" target="_blank">link</a></p>
 <p>What about an image?</p>
-<img src="docs/figures/large_scale_PDM.jpg"></img>
+<p style="align-items: center;"></p><img width="340" height=300" src="docs/figures/large_scale_PDM.jpg"></img></p>
 
 # sPop2: a dynamically-structured matrix population model
 
