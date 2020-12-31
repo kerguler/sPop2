@@ -34,7 +34,7 @@ Including the created library with your project.
 
 **C code snippet**
 
-*This example can be found in <a href="docs/examples/README.md" target="_blank">docs/examples/</a>.*
+*This example can be found in <a href="docs/examples/">docs/examples/</a>.*
 
 ```c
 #include "spop2/spop2.h"
