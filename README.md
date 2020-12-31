@@ -38,6 +38,7 @@ Including the created library with your project.
 
 ```c
 #include "spop2/spop2.h"
+// ...
 spop pop = spop_init(0, MODE_ACCP_ERLANG);
 spop_add(pop, 0, 0, 0, 0, 1000);
 spop_iterate(pop,
@@ -46,6 +47,12 @@ spop_iterate(pop,
              0);
 spop_print(pop);
 spop_destroy(&pop);
+```
+
+**Compile and run**
+
+```bash
+$ gcc -Wall -lm -lspop2 -lgsl -o ex1_simple ex1_simple.c
 ```
 
 ## Removing Clutter
