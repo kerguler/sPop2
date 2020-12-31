@@ -18,6 +18,7 @@ Constructing configuration and Makefiles
 Compile and install the library to the OS defaults (`/usr/local/lib` and `/usr/local/include`)
 
 ```bash
+make
 sudo make install
 ```
 

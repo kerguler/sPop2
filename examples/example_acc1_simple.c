@@ -2,7 +2,7 @@
  * This is an example file for spop2
  * ----------------------------------------------
  * Compile with:
- * $ gcc -I/usr/local -Wall -lm -lspop2 -lgsl -o example_acc1_simple example_acc1_simple.c
+ * $ gcc -Wall -lm -lspop2 -lgsl -o example_acc1_simple example_acc1_simple.c
  * Execute:
  * ./example_acc1_simple
  */

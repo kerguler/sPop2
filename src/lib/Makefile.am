@@ -6,8 +6,8 @@ AM_CFLAGS += $(GLIB_CFLAGS)
 lib_LTLIBRARIES =  libspop2.la libspop2py.la
 
 # The header files to include
-libspop2_ladir = $(prefix)/spop2
-libspop2py_ladir = $(prefix)/spop2
+libspop2_ladir = $(includedir)/spop2
+libspop2py_ladir = $(includedir)/spop2
 
 # The files to add to the library and to the source distribution
 # ---
