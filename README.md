@@ -5,7 +5,7 @@
 </p>
 
 This is the standalone C library of the dynamically-structured matrix population model sPop2.
-This version implements both hazard-based and accumulative processes in development and survival.
+This version implements both hazard-based and accumulative processes. While the method of hazards is reserved for survival, both methods can be used for development.
 
 ## Installation
 
