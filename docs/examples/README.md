@@ -1,52 +1,6 @@
 ## Using the sPop2 library
 
-Using the sPop2 library to develop a population dynamics model.
+This directory contains a list of examples to demonstrate the use of the sPop2 library.
 
-**C code snippet**
-
-*ex1_simple.c*
-
-```c
-#include "spop2/spop2.h"
-```
-Declare an spop object
-```c
-spop pop = spop_init(0,                  // Deterministic
-                     MODE_ACCP_ERLANG);  // Method of accumulation with Erlang distribution
-```
-Introduce individuals to the population
-```c
-spop_add(pop,    // The spop object 
-         0,      // Age                   (method of hazards)
-         0,      // Development cycle     (method of hazards)
-         0,      // Development indicator (method of hazards)
-         0,      // Acc. dev. object      (method of accumulation)
-         1000);  // Population size
-```
-Take one time step (survive and develop)
-```c
-spop_iterate(pop,     // The spop object
-             0,       // Development (fixed daily probability)
-             10,      // Development (mean number of steps)
-             5,       // Development (st.dev. of the number of steps) 
-             0,       // Development (function to determine daily probability)
-             0.25,    // Death (fixed daily probability)
-             0,       // Death (mean number of steps)
-             0,       // Death (st.dev. of the number of steps) 
-             0,       // Death (function to determine daily probability)
-             0);      // Pause aging and development
-```
-Inspect the population
-```c
-spop_print(pop);
-```
-Cleanup and exit
-```c
-spop_destroy(&pop);
-```
-
-**Compile and run**
-
-```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex1_simple ex1_simple.c
-```
+1. <a href="docs/examples/ex1_simple/">ex1_simple.c</a>: A simple example for declaring an structured sPop population. 
+2. <a href="docs/examples/ex2_compare/">ex2_compare.c</a>: A comparison between accumulative and age-dependent population dynamics. 
