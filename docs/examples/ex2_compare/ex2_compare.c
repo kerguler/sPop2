@@ -1,22 +1,29 @@
 #include "spop2/spop2.h"
 
 int main(void) {
-    spop pop = spop_init(0, MODE_GAMMA_HASH);
-    spop_add(pop, 0, 0, 0, 0, 1000);
-    spop_iterate(pop,
-                 0, 10, 5, 0,
-                 0.25, 0, 0, 0,
-                 0);
-    spop_print(pop);
-    spop_destroy(&pop);
-
-    pop = spop_init(0, MODE_ACCP_ERLANG);
-    spop_add(pop, 0, 0, 0, 0, 1000);
-    spop_iterate(pop,
-                 0, 10, 5, 0,
-                 0.25, 0, 0, 0,
-                 0);
-    spop_print(pop);
-    spop_destroy(&pop);
+    unsigned int modes[5] = {
+        MODE_GAMMA_HASH,
+        MODE_NBINOM_RAW,
+        MODE_ACCP_ERLANG,
+        MODE_ACCP_FIXED,
+        MODE_ACCP_PASCAL
+    };
+    unsigned int mode;
+    unsigned int tm;
+    spop pop;
+    //
+    for (mode=0; mode<5; mode++) {
+        pop = spop_init(0, modes[mode]);
+        //
+        spop_add(pop, 0, 0, 0, 0, 1000);
+        printf("%d,%d,%g\n", mode, 0, pop->size.d);
+        //
+        for (tm=1; tm<50; tm++) {
+            spop_iterate(pop,  0, 20, 10, 0,  0, 0, 0, 0,  0);
+            printf("%d,%d,%g\n", mode, tm, pop->size.d);
+        }
+        //
+        spop_destroy(&pop);
+    }
     return 0;
 }

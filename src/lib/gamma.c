@@ -186,8 +186,8 @@ double nbinom_dist_prob(double mean, double sd, unsigned int age) {
     return 1.0;
   }
   //
-  val = gsl_sf_beta_inc(r, 1 + age, p);
-  val = (val - gsl_sf_beta_inc(r, 2 + age, p)) / (val - 1.0);
+  val = age ? gsl_sf_beta_inc(r, age, p) : 0; //sPop2: time shift fixed
+  val = val < 1.0 ? (val - gsl_sf_beta_inc(r, 1 + age, p)) / (val - 1.0) : 0.0; //sPop2: time shift fixed
   //
   if (isnan(val)) {
     fprintf(stderr,"WARNING: Domain error for negative binomial distribution (mean=%g, sd=%g, age=%d, r=%g, p=%g)\n",mean,sd,age,r,p);
