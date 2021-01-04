@@ -1,6 +1,6 @@
-## Using the sPop2 library
+## Creating an sPop population
 
-Using the sPop2 library to develop a population dynamics model.
+The sPop2 library can be used to create a structured population.
 
 **C code snippet**
 
