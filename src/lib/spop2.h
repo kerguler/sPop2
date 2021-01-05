@@ -41,6 +41,7 @@ typedef double (*pfunc)(double, double);
 
 struct quant_st {
     qunit devc;
+    qunit devtable;
     sdnum size;
     sdnum completed;
     unsigned char stochastic;
@@ -159,6 +160,7 @@ void qunit_free(qunit *);
 
 char quant_get_cfun(char, pfunc *);
 quant quant_init(unsigned char, unsigned char);
+char quant_empty_devc(qunit *);
 char quant_empty(quant);
 char quant_destroy(quant *);
 #define quant_add(pop,dev,size) {   \
@@ -170,9 +172,9 @@ char quant_destroy(quant *);
   quant_sdadd((pop),(dev),tmp);     \
 }
 char quant_sdadd(quant, double, sdnum);
-char quant_sdpopadd(quant, quant);
+char quant_sdpopadd(quant, quant, char);
 void quant_print(quant);
-void quant_retrieve(quant, double *, double *, unsigned int *);
+void quant_retrieve(quant, char, double *, double *, unsigned int *);
 char quant_iterate(quant, double, double);
 char quant_survive(quant, double, sdnum *);
 
@@ -200,11 +202,10 @@ void swap(spop, individual_data *, individual_data *);
        dev = quant_init((s)->stochastic,(s)->gamma_mode);                 \
        quant_sdadd(dev,(stage),spop_var_tmp);                             \
     }                                                                     \
-    spop_sdadd((s),(age),(devcycle),(development),dev,spop_var_tmp);      \
+    spop_sdadd((s),(age),(devcycle),(development),dev,spop_var_tmp,0);    \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, quant, sdnum);
-
-void spop_popadd(spop, spop);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, quant, sdnum, char);
+void spop_popadd(spop, spop, char);
 
 typedef double (*prob_func)(unsigned int, double, double, double);
 typedef void (*iter_func)(const individual_data*, double*, double*, double*);
@@ -216,7 +217,7 @@ unsigned int spoplib_init(unsigned char, unsigned char);
 void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double, double);
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
-void spoplib_retrieve(unsigned int, double *, double *, unsigned int *);
+void spoplib_retrieve(unsigned int, char, double *, double *, unsigned int *);
 void spoplib_print(unsigned int);
 void spoplib_destroy(unsigned int);
 void spoplib_destroy_all(void);

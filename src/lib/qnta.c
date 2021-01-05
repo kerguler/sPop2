@@ -30,6 +30,7 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 */
 
 #define ONE ((double)(1.0))
+#define TWO ((double)(2.0))
 
 double QSIZE_MAX = 10000.0;
 double QSIZE_ROUND_EPS = 0.0;
@@ -95,6 +96,7 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     quant pop = (quant) calloc(1, sizeof(struct quant_st));
     if (!pop) return 0;
     pop->devc = 0;
+    pop->devtable = 0;
     pop->stochastic = stochastic;
     pop->pdist = pdist;
     if (!quant_get_cfun(pop->pdist,&(pop->cfun))) return 0;
@@ -109,12 +111,21 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     return pop;
 }
 
-char quant_empty(quant s) {
+char quant_empty_devc(qunit *dev) {
     qunit p, tmp;
-    HASH_ITER(hh, s->devc, p, tmp) {
-        HASH_DEL(s->devc, p);
+    HASH_ITER(hh, (*dev), p, tmp) {
+        HASH_DEL((*dev), p);
         free(p);
     }
+    (*dev) = 0;
+    return 0;
+}
+
+char quant_empty(quant s) {
+    char ret = quant_empty_devc(&(s->devc));
+    if (ret) return 1;
+    ret += quant_empty_devc(&(s->devtable));
+    if (ret) return 1;
     //
     if (s->stochastic) {
         s->size.i = 0;
@@ -124,7 +135,7 @@ char quant_empty(quant s) {
         s->completed.d = 0.0;
     }
     //
-    return 0;
+    return ret;
 }
 
 char quant_destroy(quant *s) {
@@ -177,13 +188,14 @@ char quant_sdadd(quant pop, double dev, sdnum size) {
     return ret;
 }
 
-char quant_sdpopadd(quant pop, quant add) {
+char quant_sdpopadd(quant pop, quant add, char devtable) {
     if (pop->stochastic != add->stochastic) {
         printf("Error: Incompatible population types!\n");
         return 1;
     }
+    qunit addc = devtable ? add->devtable : add->devc;
     qunit p = 0, tmp = 0, pp = 0;
-    HASH_ITER(hh, add->devc, p, tmp) {
+    HASH_ITER(hh, addc, p, tmp) {
         HASH_FIND(hh, pop->devc, &(p->dev), sizeof(double), pp);
         if (pp) {
             if (pop->stochastic)
@@ -215,13 +227,22 @@ void quant_print(quant s) {
                p->dev,
                s->stochastic ? p->size.i : p->size.d);
     }
+    if (s->devtable) {
+        printf("# completed\n#dev,#size\n");
+        HASH_ITER(hh, s->devtable, p, tmp) {
+            printf("%g,%g\n",
+                   p->dev,
+                   s->stochastic ? p->size.i : p->size.d);
+        }
+    }
 }
 
-void quant_retrieve(quant s, double *dev, double *size, unsigned int *limit) {
+void quant_retrieve(quant s, char devtable, double *dev, double *size, unsigned int *limit) {
     if (!s) return;
     unsigned int i = 0;
+    qunit devc = devtable ? s->devtable : s->devc;
     qunit p, tmp;
-    HASH_ITER(hh, s->devc, p, tmp) {
+    HASH_ITER(hh, devc, p, tmp) {
         dev[i] = p->dev;
         size[i] = s->stochastic ? (double)(p->size.i) : p->size.d;
         i++;
@@ -233,6 +254,7 @@ char quant_iterate_hazards(quant pop,
                            double gamma_k,
                            double gamma_theta,
                            pfunc cfun) {
+    quant_empty_devc(&(pop->devtable));
     if (pop->stochastic) {
         pop->completed.i = 0;
         pop->size.i = 0;
@@ -258,7 +280,7 @@ char quant_iterate_hazards(quant pop,
             //
             accd = p->dev + ((double)dev / gamma_k);
             if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-            if (accd >= ONE) {
+            if (accd >= TWO) {
                 if (pop->stochastic) {
                     pop->completed.i += p->size.i;
                     p->size.i = 0;
@@ -278,26 +300,49 @@ char quant_iterate_hazards(quant pop,
                                           haz,
                                           p->size.i);
                 if (!item.i) continue;
-                pop->size.i += item.i;
                 p->size.i -= item.i;
             } else {
                 item.d = p->size.d * haz;
                 if (!item.d) continue;
-                pop->size.d += item.d;
                 p->size.d -= item.d;
             }
             //
-            qnt = qunit_new(accd, item);
-            if (!qnt) return 1;
-            HASH_FIND(hh, devc, &accd, sizeof(double), pp);
-            if (pp) {
-                if (pop->stochastic)
-                    pp->size.i += item.i;
-                else
-                    pp->size.d += item.d;
+            if (accd >= ONE) {
+                if (pop->stochastic) {
+                    pop->completed.i += item.i;
+                } else {
+                    pop->completed.d += item.d;
+                }
+                accd -= ONE;
+                qnt = qunit_new(accd, item);
+                if (!qnt) return 1;
+                HASH_FIND(hh, pop->devtable, &accd, sizeof(double), pp);
+                if (pp) {
+                    if (pop->stochastic)
+                        pp->size.i += item.i;
+                    else
+                        pp->size.d += item.d;
+                } else {
+                    HASH_ADD(hh, pop->devtable, dev, sizeof(double), qnt);
+                }
             } else {
-                HASH_ADD(hh, devc, dev, sizeof(double), qnt);
-                counter++;
+                if (pop->stochastic) {
+                    pop->size.i += item.i;
+                } else {
+                    pop->size.d += item.d;
+                }
+                qnt = qunit_new(accd, item);
+                if (!qnt) return 1;
+                HASH_FIND(hh, devc, &accd, sizeof(double), pp);
+                if (pp) {
+                    if (pop->stochastic)
+                        pp->size.i += item.i;
+                    else
+                        pp->size.d += item.d;
+                } else {
+                    HASH_ADD(hh, devc, dev, sizeof(double), qnt);
+                    counter++;
+                }
             }
         }
         //
@@ -377,12 +422,6 @@ char quant_iterate(quant pop,
     if (gamma_k == 0) {
         printf("Error: 0 mean is not acceptable!\n");
         return 1;
-    }
-    //
-    if (pop->stochastic) {
-        pop->completed.i = 0;
-    } else {
-        pop->completed.d = 0.0;
     }
     //
     if (!pop->devc) return 1;
