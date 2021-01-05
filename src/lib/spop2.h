@@ -172,7 +172,7 @@ char quant_destroy(quant *);
   quant_sdadd((pop),(dev),tmp);     \
 }
 char quant_sdadd(quant, double, sdnum);
-char quant_sdpopadd(quant, quant, char);
+char quant_sdpopadd(quant, quant, char, sdnum *);
 void quant_print(quant);
 void quant_retrieve(quant, char, double *, double *, unsigned int *);
 char quant_iterate(quant, double, double);

@@ -264,15 +264,24 @@ void spop_sdadd(spop s,
     s->individuals[cat].devcycle = tmp.devcycle;
     s->individuals[cat].development = tmp.development;
     //
-    if (s->accumulative)
-        quant_sdpopadd(s->individuals[cat].accumulate,dev,devtable);
-    //
-    if (s->stochastic) {
-        s->individuals[cat].number.i += number.i;
-        s->size.i += number.i;
+    if (s->accumulative) {
+        sdnum added;
+        quant_sdpopadd(s->individuals[cat].accumulate, dev, devtable, &added);
+        if (s->stochastic) {
+            s->individuals[cat].number.i += added.i;
+            s->size.i += added.i;
+        } else {
+            s->individuals[cat].number.d += added.d;
+            s->size.d += added.d;
+        }
     } else {
-        s->individuals[cat].number.d += number.d;
-        s->size.d += number.d;
+        if (s->stochastic) {
+            s->individuals[cat].number.i += number.i;
+            s->size.i += number.i;
+        } else {
+            s->individuals[cat].number.d += number.d;
+            s->size.d += number.d;
+        }
     }
     //
     qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);

@@ -30,7 +30,13 @@ void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
 */
 
 #define ONE ((double)(1.0))
-#define TWO ((double)(2.0))
+/*
+ * WARNING: If this is not high enough,
+ * not all the developed will be transferred to the next stage!
+ *
+ * QUESTION: How high is high enough?
+ */
+#define ACCTHR ((double)(2.0))
 
 double QSIZE_MAX = 10000.0;
 double QSIZE_ROUND_EPS = 0.0;
@@ -188,11 +194,16 @@ char quant_sdadd(quant pop, double dev, sdnum size) {
     return ret;
 }
 
-char quant_sdpopadd(quant pop, quant add, char devtable) {
+char quant_sdpopadd(quant pop, quant add, char devtable, sdnum *size) {
     if (pop->stochastic != add->stochastic) {
         printf("Error: Incompatible population types!\n");
         return 1;
     }
+    if (pop->stochastic)
+        size->i = 0;
+    else
+        size->d = 0.0;
+    //
     qunit addc = devtable ? add->devtable : add->devc;
     qunit p = 0, tmp = 0, pp = 0;
     HASH_ITER(hh, addc, p, tmp) {
@@ -207,10 +218,13 @@ char quant_sdpopadd(quant pop, quant add, char devtable) {
             HASH_ADD(hh, pop->devc, dev, sizeof(double), ppp);
         }
         //
-        if (pop->stochastic)
+        if (pop->stochastic) {
             pop->size.i += p->size.i;
-        else
+            size->i += p->size.i;
+        } else {
             pop->size.d += p->size.d;
+            size->d += p->size.d;
+        }
     }
     return 0;
 }
@@ -280,7 +294,7 @@ char quant_iterate_hazards(quant pop,
             //
             accd = p->dev + ((double)dev / gamma_k);
             if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
-            if (accd >= TWO) {
+            if (accd >= ACCTHR) {
                 if (pop->stochastic) {
                     pop->completed.i += p->size.i;
                     p->size.i = 0;
