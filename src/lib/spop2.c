@@ -470,7 +470,7 @@ char spop_iterate(spop  s,
             // Death
             prob = calc_prob_death(tmpn->age, death_prob, death_mean, death_sd);
             if (s->accumulative) {
-                if (quant_survive(tmpn->accumulate, prob, &k)) return 1;
+                if (quant_survive(tmpn->accumulate, prob, 0, &k)) return 1;
                 if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
                     (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
                     remove = 1;
@@ -495,20 +495,22 @@ char spop_iterate(spop  s,
         //
         if (remove == 0) {
             if (s->accumulative) {
-                if (quant_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
-                k = tmpn->accumulate->completed;
-                if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
-                    (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
-                    remove = 1;
-                }
-                if (s->stochastic) {
-                    tmpn->number.i -= k.i;
-                    s->developed.i += k.i;
-                    s->size.i -= k.i;
-                } else {
-                    tmpn->number.d -= k.d;
-                    s->developed.d += k.d;
-                    s->size.d -= k.d;
+                if (dev_mean > 0 && dev_sd > 0) {
+                    if (quant_iterate(tmpn->accumulate, dev_mean, dev_sd)) return 1;
+                    k = tmpn->accumulate->completed;
+                    if ((s->stochastic && tmpn->accumulate->size.i == 0) ||
+                        (!(s->stochastic) && tmpn->accumulate->size.d < DPOP_EPS)) {
+                        remove = 1;
+                    }
+                    if (s->stochastic) {
+                        tmpn->number.i -= k.i;
+                        s->developed.i += k.i;
+                        s->size.i -= k.i;
+                    } else {
+                        tmpn->number.d -= k.d;
+                        s->developed.d += k.d;
+                        s->size.d -= k.d;
+                    }
                 }
             } else {
                 if (dev_fun)

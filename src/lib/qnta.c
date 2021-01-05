@@ -443,15 +443,16 @@ char quant_iterate(quant pop,
     return quant_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
 }
 
-char quant_survive(quant pop, double prob, sdnum *ret) {
+char quant_survive(quant pop, double prob, char devtable, sdnum *ret) {
     ret->i = 0;
     ret->d = 0.0;
     pop->completed.i = 0;
     pop->completed.d = 0.0;
     sdnum item;
     qunit p, tmp;
+    qunit devc = devtable ? pop->devtable : pop->devc;
     if (pop->stochastic) {
-        HASH_ITER(hh, pop->devc, p, tmp) {
+        HASH_ITER(hh, devc, p, tmp) {
             if (!(p->size.i)) continue;
             item.i = gsl_ran_binomial(RANDOM,
                                       prob,
@@ -460,19 +461,19 @@ char quant_survive(quant pop, double prob, sdnum *ret) {
             pop->size.i -= item.i;
             ret->i += item.i;
             if (!(p->size.i)) {
-                HASH_DEL(pop->devc, p);
+                HASH_DEL(devc, p);
                 free(p);
             }
         }
     } else {
-        HASH_ITER(hh, pop->devc, p, tmp) {
+        HASH_ITER(hh, devc, p, tmp) {
             if (!(p->size.d)) continue;
             item.d = p->size.d * prob;
             p->size.d -= item.d;
             pop->size.d -= item.d;
             ret->d += item.d;
             if (!(p->size.d)) {
-                HASH_DEL(pop->devc, p);
+                HASH_DEL(devc, p);
                 free(p);
             }
         }

@@ -176,7 +176,7 @@ char quant_sdpopadd(quant, quant, char, sdnum *);
 void quant_print(quant);
 void quant_retrieve(quant, char, double *, double *, unsigned int *);
 char quant_iterate(quant, double, double);
-char quant_survive(quant, double, sdnum *);
+char quant_survive(quant, double, char, sdnum *);
 
 /* ******************************* */
 
