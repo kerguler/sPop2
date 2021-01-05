@@ -5,7 +5,7 @@ void print_out(unsigned int tm, spop *egg, spop *larva, spop *pupa, spop *adult)
 }
 
 int main(void) {
-    unsigned int mode = MODE_GAMMA_HASH;
+    unsigned char mode = MODE_GAMMA_HASH;
     unsigned int tm = 0;
     //
     spop egg = spop_init(0, mode);

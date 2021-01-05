@@ -8,7 +8,7 @@ Different types of structured populations can be created with the sPop2 library.
 
 Compare the following probability distributions of process duration.
 ```c
-unsigned int modes[5] = {
+unsigned char modes[5] = {
     MODE_GAMMA_HASH,  // Method of hazards - Gamma distribution
     MODE_NBINOM_RAW,  // Method of hazards - Negative binomial distribution
     MODE_ACCP_FIXED,  // Method of accumulation - Fixed duration
