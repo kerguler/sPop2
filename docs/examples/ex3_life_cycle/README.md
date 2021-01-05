@@ -8,7 +8,7 @@ This is an example of a typical insect life cycle modelled with sPop.
 
 Declare a distinct population for each of the four life stages.
 ```c
-unsigned char mode = MODE_GAMMA_HASH;
+unsigned int mode = MODE_GAMMA_HASH;
 spop egg = spop_init(0, mode);
 spop larva = spop_init(0, mode);
 spop pupa = spop_init(0, mode);

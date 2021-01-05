@@ -210,13 +210,7 @@ int search(individual_data *arr, int l, int r, individual_data *x) {
   return -1;
 }
 
-void spop_sdadd(spop s,
-                unsigned int age,
-                unsigned int devcycle,
-                unsigned int development,
-                quant dev,
-                sdnum number,
-                char devtable) {
+void spop_sdadd(spop s, unsigned int age, unsigned int devcycle, unsigned int development, quant dev, sdnum number) {
     if (s->stochastic) {
         if (number.i <= 0) return;
     } else {
@@ -265,7 +259,7 @@ void spop_sdadd(spop s,
     s->individuals[cat].development = tmp.development;
     //
     if (s->accumulative)
-        quant_sdpopadd(s->individuals[cat].accumulate,dev,devtable);
+        quant_sdpopadd(s->individuals[cat].accumulate,dev);
     //
     if (s->stochastic) {
         s->individuals[cat].number.i += number.i;
@@ -278,17 +272,15 @@ void spop_sdadd(spop s,
     qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);
 }
 
-void spop_popadd(spop s, spop d, char devtable) {
+void spop_popadd(spop s, spop d) {
   unsigned int i;
   if (!d || !(d->individuals)) return;
   for (i=0; i<d->cat; i++)
-    spop_sdadd(s,
-               d->individuals[i].age,
+    spop_sdadd(s,d->individuals[i].age,
                d->individuals[i].devcycle,
                d->individuals[i].development,
                d->individuals[i].accumulate,
-               d->individuals[i].number,
-               devtable);
+               d->individuals[i].number);
 }
 
 char calc_spop(spop s, individual_data *tmpn, double prob, sdnum *k) {
@@ -534,8 +526,7 @@ char spop_iterate(spop  s,
                            pause ? tmpn->devcycle : tmpn->devcycle + 1,
                            pause ? tmpn->development : 0,
                            tmpn->accumulate,
-                           k,
-                           0);
+                           k);
             }
         }
         //
@@ -602,12 +593,12 @@ void spoplib_read(unsigned int id, double *size, double *developed, double *dead
     }
 }
 
-void spoplib_retrieve(unsigned int id, char devtable, double *dev, double *size, unsigned int *limit) {
+void spoplib_retrieve(unsigned int id, double *dev, double *size, unsigned int *limit) {
     if (pop_list[id] && pop_list[id]->accumulative) {
         unsigned int count = 0;
         for (count = 0; count < pop_list[id]->cat; count++) {
             if (pop_list[id]->individuals[count].accumulate) {
-                quant_retrieve(pop_list[id]->individuals[count].accumulate, devtable, dev, size, limit);
+                quant_retrieve(pop_list[id]->individuals[count].accumulate, dev, size, limit);
             }
         }
     }

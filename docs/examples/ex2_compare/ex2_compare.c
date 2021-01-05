@@ -1,14 +1,14 @@
 #include "spop2/spop2.h"
 
 int main(void) {
-    unsigned char modes[5] = {
+    unsigned int modes[5] = {
         MODE_GAMMA_HASH,
         MODE_NBINOM_RAW,
         MODE_ACCP_ERLANG,
         MODE_ACCP_FIXED,
         MODE_ACCP_PASCAL
     };
-    unsigned char mode;
+    unsigned int mode;
     unsigned int tm;
     spop pop;
     //
