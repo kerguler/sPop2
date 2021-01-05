@@ -8,6 +8,8 @@ int main(void) {
     unsigned char mode = MODE_ACCP_ERLANG;
     unsigned int tm = 0;
     //
+    set_APPROX(1e-3);
+    //
     spop egg = spop_init(0, mode);
     spop larva = spop_init(0, mode);
     spop pupa = spop_init(0, mode);
