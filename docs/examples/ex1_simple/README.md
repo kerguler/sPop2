@@ -12,7 +12,7 @@ The sPop2 library can be used to create a structured population.
 Declare an spop object
 ```c
 spop pop = spop_init(0,                  // Deterministic
-                     MODE_ACCP_ERLANG);  // Method of accumulation with Erlang distribution
+                     MODE_GAMMA_HASH);   // Method of hazards with Gamma distribution
 ```
 Introduce individuals to the population
 ```c
@@ -20,7 +20,6 @@ spop_add(pop,    // The spop object
          0,      // Age                   (method of hazards)
          0,      // Development cycle     (method of hazards)
          0,      // Development indicator (method of hazards)
-         0,      // Acc. dev. object      (method of accumulation)
          1000);  // Population size
 ```
 Take one time step (survive and develop)

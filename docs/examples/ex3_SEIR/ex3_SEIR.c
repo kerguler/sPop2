@@ -16,7 +16,7 @@ int main(void) {
     double v = 0;
     //
     S = 99;
-    spop_add(E, 0, 0, 0, 0, 1);
+    spop_add(E, 0, 0, 0, 1);
     print_out(tm, S, &E, &I, R);
     //
     for (tm=1; tm<100; tm++) {
@@ -26,8 +26,8 @@ int main(void) {
         v = I->size.d / (S + E->size.d + I->size.d - 1.0 + R);
         //
         R += I->developed.d;
-        spop_add(I, 0, 0, 0, 0, E->developed.d);
-        spop_add(E, 0, 0, 0, 0, v * S);
+        spop_add(I, 0, 0, 0, E->developed.d);
+        spop_add(E, 0, 0, 0, v * S);
         S -= v * S;
         //
         print_out(tm, S, &E, &I, R);

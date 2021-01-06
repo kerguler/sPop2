@@ -29,7 +29,7 @@ typedef union {
 /* ******************************* */
 
 typedef struct qunit_st *qunit;
-typedef struct quant_st *quant;
+typedef struct spop2_st *spop2;
 
 struct qunit_st {
     double dev;
@@ -39,7 +39,7 @@ struct qunit_st {
 
 typedef double (*pfunc)(double, double);
 
-struct quant_st {
+struct spop2_st {
     qunit devc;
     qunit devtable;
     sdnum size;
@@ -93,7 +93,6 @@ typedef struct individual_st {
   unsigned int age;
   unsigned int devcycle;
   unsigned int development;
-  quant accumulate;
   sdnum number;
 } individual_data;
 
@@ -176,25 +175,25 @@ double fun_cpois_C(double, double);
 qunit qunit_new(double,sdnum);
 void qunit_free(qunit *);
 
-char quant_get_cfun(char, pfunc *);
-quant quant_init(unsigned char, unsigned char);
-char quant_empty_devc(qunit *);
-char quant_empty(quant);
-char quant_destroy(quant *);
-#define quant_add(pop,dev,size) {   \
+char spop2_get_cfun(char, pfunc *);
+spop2 spop2_init(unsigned char, unsigned char);
+char spop2_empty_devc(qunit *);
+char spop2_empty(spop2);
+char spop2_destroy(spop2 *);
+#define spop2_add(pop,dev,size) {   \
   sdnum tmp;                        \
   if ((pop)->stochastic)            \
     tmp.i = (unsigned int)size;     \
   else                              \
     tmp.d = (double)size;           \
-  quant_sdadd((pop),(dev),tmp);     \
+  spop2_sdadd((pop),(dev),tmp);     \
 }
-char quant_sdadd(quant, double, sdnum);
-char quant_sdpopadd(quant, quant, char, sdnum *);
-void quant_print(quant);
-void quant_retrieve(quant, char, double *, double *, unsigned int *);
-char quant_iterate(quant, double, double);
-char quant_survive(quant, double, char, sdnum *);
+char spop2_sdadd(spop2, double, sdnum);
+char spop2_sdpopadd(spop2, spop2, char, sdnum *);
+void spop2_print(spop2);
+void spop2_retrieve(spop2, char, double *, double *, unsigned int *);
+char spop2_iterate(spop2, double, double);
+char spop2_survive(spop2, double, char, sdnum *);
 
 /* ******************************* */
 
@@ -209,20 +208,15 @@ void spop_print_to_csv(spop);
 
 void swap(spop, individual_data *, individual_data *);
 
-#define spop_add(s,age,devcycle,development,stage,number) {               \
+#define spop_add(s,age,devcycle,development,number) {                     \
     sdnum spop_var_tmp;                                                   \
     if ((s)->stochastic)                                                  \
       spop_var_tmp.i = (int)(number);                                     \
     else                                                                  \
       spop_var_tmp.d = (double)(number);                                  \
-    quant dev = 0;                                                        \
-    if ((s)->accumulative) {                                              \
-       dev = quant_init((s)->stochastic,(s)->gamma_mode);                 \
-       quant_sdadd(dev,(stage),spop_var_tmp);                             \
-    }                                                                     \
-    spop_sdadd((s),(age),(devcycle),(development),dev,spop_var_tmp,0);    \
+    spop_sdadd((s),(age),(devcycle),(development),spop_var_tmp,0);        \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, quant, sdnum, char);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, sdnum, char);
 void spop_popadd(spop, spop, char);
 
 typedef double (*prob_func)(unsigned int, double, double, double);

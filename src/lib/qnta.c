@@ -71,7 +71,7 @@ double fun_cpois_C(double x, double par) {
     return gsl_sf_gamma_inc_Q(x + ONE, ONE / par);
 }
 
-char quant_get_cfun(char mode, pfunc *cfun) {
+char spop2_get_cfun(char mode, pfunc *cfun) {
     switch (mode) {
         case MODE_ACCP_ERLANG:
             *cfun = fun_pois_C;
@@ -96,16 +96,16 @@ char quant_get_cfun(char mode, pfunc *cfun) {
     return 1;
 }
 
-quant quant_init(unsigned char stochastic, unsigned char pdist) {
+spop2 spop2_init(unsigned char stochastic, unsigned char pdist) {
     // signal(SIGSEGV, clean_exit_on_sig);
     //
-    quant pop = (quant) calloc(1, sizeof(struct quant_st));
+    spop2 pop = (spop2) calloc(1, sizeof(struct spop2_st));
     if (!pop) return 0;
     pop->devc = 0;
     pop->devtable = 0;
     pop->stochastic = stochastic;
     pop->pdist = pdist;
-    if (!quant_get_cfun(pop->pdist,&(pop->cfun))) return 0;
+    if (!spop2_get_cfun(pop->pdist,&(pop->cfun))) return 0;
     if (stochastic) {
         RANDOM = get_RAND_GSL();
         pop->size.i = 0;
@@ -117,7 +117,7 @@ quant quant_init(unsigned char stochastic, unsigned char pdist) {
     return pop;
 }
 
-char quant_empty_devc(qunit *dev) {
+char spop2_empty_devc(qunit *dev) {
     qunit p, tmp;
     HASH_ITER(hh, (*dev), p, tmp) {
         HASH_DEL((*dev), p);
@@ -127,10 +127,10 @@ char quant_empty_devc(qunit *dev) {
     return 0;
 }
 
-char quant_empty(quant s) {
-    char ret = quant_empty_devc(&(s->devc));
+char spop2_empty(spop2 s) {
+    char ret = spop2_empty_devc(&(s->devc));
     if (ret) return 1;
-    ret += quant_empty_devc(&(s->devtable));
+    ret += spop2_empty_devc(&(s->devtable));
     if (ret) return 1;
     //
     if (s->stochastic) {
@@ -144,10 +144,10 @@ char quant_empty(quant s) {
     return ret;
 }
 
-char quant_destroy(quant *s) {
+char spop2_destroy(spop2 *s) {
     char ret = 0;
     if (*s) {
-        ret += quant_empty(*s);
+        ret += spop2_empty(*s);
         free((*s));
         (*s) = 0;
     }
@@ -168,7 +168,7 @@ void qunit_free(qunit *tmp) {
     (*tmp) = 0;
 }
 
-char quant_sdadd(quant pop, double dev, sdnum size) {
+char spop2_sdadd(spop2 pop, double dev, sdnum size) {
     char ret = 0;
     //
     if (QSIZE_ROUND_EPS) dev = QSIZE_ROUND(dev);
@@ -194,7 +194,7 @@ char quant_sdadd(quant pop, double dev, sdnum size) {
     return ret;
 }
 
-char quant_sdpopadd(quant pop, quant add, char devtable, sdnum *size) {
+char spop2_sdpopadd(spop2 pop, spop2 add, char devtable, sdnum *size) {
     if (pop->stochastic != add->stochastic) {
         printf("Error: Incompatible population types!\n");
         return 1;
@@ -229,7 +229,7 @@ char quant_sdpopadd(quant pop, quant add, char devtable, sdnum *size) {
     return 0;
 }
 
-void quant_print(quant s) {
+void spop2_print(spop2 s) {
     if (!s) return;
     printf("# m");
     PRINT_MODE(s->pdist);
@@ -253,7 +253,7 @@ void quant_print(quant s) {
     }
 }
 
-void quant_retrieve(quant s, char devtable, double *dev, double *size, unsigned int *limit) {
+void spop2_retrieve(spop2 s, char devtable, double *dev, double *size, unsigned int *limit) {
     if (!s) return;
     unsigned int i = 0;
     qunit devc = devtable ? s->devtable : s->devc;
@@ -266,11 +266,11 @@ void quant_retrieve(quant s, char devtable, double *dev, double *size, unsigned 
     limit[0] = i;
 }
 
-char quant_iterate_hazards(quant pop,
+char spop2_iterate_hazards(spop2 pop,
                            double gamma_k,
                            double gamma_theta,
                            pfunc cfun) {
-    quant_empty_devc(&(pop->devtable));
+    spop2_empty_devc(&(pop->devtable));
     if (pop->stochastic) {
         pop->completed.i = 0;
         pop->size.i = 0;
@@ -373,7 +373,7 @@ char quant_iterate_hazards(quant pop,
     return 0;
 }
 
-char quant_iterate(quant pop,
+char spop2_iterate(spop2 pop,
                    double dev_mean,       // mean development time
                    double dev_sd) {       // sd development time
     double gamma_k = 0.0,
@@ -382,7 +382,7 @@ char quant_iterate(quant pop,
     pfunc cfun = pop->cfun;
     if (dev_sd == 0) {
         pdist = MODE_ACCP_FIXED;
-        if (!quant_get_cfun(pdist, &cfun)) return 1;
+        if (!spop2_get_cfun(pdist, &cfun)) return 1;
     }
     switch (pdist) {
         case MODE_ACCP_ERLANG:
@@ -442,10 +442,10 @@ char quant_iterate(quant pop,
     //
     if (!pop->devc) return 1;
     //
-    return quant_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
+    return spop2_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
 }
 
-char quant_survive(quant pop, double prob, char devtable, sdnum *ret) {
+char spop2_survive(spop2 pop, double prob, char devtable, sdnum *ret) {
     ret->i = 0;
     ret->d = 0.0;
     pop->completed.i = 0;
