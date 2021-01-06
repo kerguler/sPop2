@@ -121,7 +121,9 @@ void spop_destroy(spop *s) {
 void spop_print(spop s) {
     if (!s) return;
     unsigned int count;
-    printf("/------------------>\nGamma mode: %d\nAccumulative: %d\nPopulation type: ", s->gamma_mode,s->accumulative);
+    printf("/------------------>\nGamma mode: ");
+    PRINT_MODE(s->gamma_mode);
+    printf("\nAccumulative: %d\nPopulation type: ", s->accumulative);
     if (s->stochastic) {
         printf("Stochastic\nPopulation size: %d\nDead: %d\nDeveloped: %d\nAge\t#Cycle\tDev.\tNumber\n",
                s->size.i,

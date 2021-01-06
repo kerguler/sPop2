@@ -231,7 +231,9 @@ char quant_sdpopadd(quant pop, quant add, char devtable, sdnum *size) {
 
 void quant_print(quant s) {
     if (!s) return;
-    printf("# s%d n%g c%g\n#dev,#size\n",
+    printf("# m");
+    PRINT_MODE(s->pdist);
+    printf(" s%d n%g c%g\n#dev,#size\n",
            s->stochastic,
            s->stochastic ? s->size.i : s->size.d,
            s->stochastic ? s->completed.i : s->completed.d);

@@ -22,19 +22,19 @@ int main(void) {
         spop_iterate(egg,  0, 10, 1, 0,  0, 0, 0, 0,  0);
         spop_iterate(larva,  0, 10, 1, 0,  0, 0, 0, 0,  0);
         spop_iterate(pupa,  0, 10, 1, 0,  0, 0, 0, 0,  0);
-        // spop_iterate(adult,  0, 0, 0, 0,  0, 10, 1, 0,  0);
         spop_iterate(adult,  0, 10, 1, 0,  0, 0, 0, 0,  0);
         //
         spop_add(egg, 0, 0, 0, 0, 1.0 * adult->size.d);
-        /*
-        spop_add(larva, 0, 0, 0, 0, egg->developed.d);
-        spop_add(pupa, 0, 0, 0, 0, larva->developed.d);
-        spop_add(adult, 0, 0, 0, 0, 0.5 * pupa->developed.d);
-        */
         spop_popadd(larva, egg, 1);
         spop_popadd(pupa, larva, 1);
+        if (tm==20) {
+            spop_print(pupa->devtable);
+        }
         spop_iterate(pupa->devtable,  0, 0, 0, 0,  0.5, 0, 0, 0,  1);
-        spop_popadd(adult, pupa, 1);
+        if (tm==20) {
+            spop_print(pupa->devtable);
+        }
+        spop_popadd(adult, pupa->devtable, 1);
         //
         print_out(tm, &egg, &larva, &pupa, &adult);
     }

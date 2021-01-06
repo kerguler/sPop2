@@ -4,7 +4,7 @@ This is an example of a typical insect life cycle modelled with sPop.
 
 **C code snippet**
 
-*ex3_life_cycle.c*
+*ex4_life_cycle.c*
 
 Declare a distinct population for each of the four life stages.
 ```c
@@ -48,5 +48,5 @@ spop_destroy(&adult);
 **Compile and run**
 
 ```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex3_life_cycle ex3_life_cycle.c
+$ gcc -Wall -lm -lspop2 -lgsl -o ex4_life_cycle ex4_life_cycle.c
 ```

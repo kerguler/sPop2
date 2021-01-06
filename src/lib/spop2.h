@@ -61,6 +61,22 @@ struct quant_st {
 #define MODE_ACCP_GAMMA   8
 #define MODE_ACCP_CASWELL 9
 
+#define PRINT_MODE(x) { \
+char str[10][20] = {    \
+"MODE_GAMMA_RAW",       \
+"MODE_GAMMA_HASH",      \
+"MODE_NBINOM_RAW",      \
+"MODE_GAMMA_MATRIX",    \
+"MODE_BINOM_RAW",       \
+"MODE_ACCP_ERLANG",     \
+"MODE_ACCP_FIXED",      \
+"MODE_ACCP_PASCAL",     \
+"MODE_ACCP_GAMMA",      \
+"MODE_ACCP_CASWELL"     \
+};                      \
+printf("%s",str[(x)]);  \
+}
+
 /* ******************************* */
 
 /*
