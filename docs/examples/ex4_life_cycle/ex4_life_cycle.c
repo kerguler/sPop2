@@ -18,7 +18,7 @@ int main(void) {
     spop_add(egg, 0, 0, 0, 0, 100);
     print_out(tm, &egg, &larva, &pupa, &adult);
     //
-    for (tm=1; tm<100; tm++) {
+    for (tm=1; tm<40; tm++) {
         spop_iterate(egg,  0, 10, 1, 0,  0, 0, 0, 0,  0);
         spop_iterate(larva,  0, 10, 1, 0,  0, 0, 0, 0,  0);
         spop_iterate(pupa,  0, 10, 1, 0,  0, 0, 0, 0,  0);
@@ -33,8 +33,12 @@ int main(void) {
         spop_iterate(pupa->devtable,  0, 0, 0, 0,  0.5, 0, 0, 0,  1);
         if (tm==20) {
             spop_print(pupa->devtable);
+            spop_print(adult);
         }
-        spop_popadd(adult, pupa->devtable, 1);
+        spop_popadd(adult, pupa->devtable, 0);
+        if (tm==20) {
+            spop_print(adult);
+        }
         //
         print_out(tm, &egg, &larva, &pupa, &adult);
     }
