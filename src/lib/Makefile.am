@@ -18,6 +18,7 @@ libspop2_la_SOURCES = \
 				     ran_gen.c \
 				     gamma.c \
 				     qnta.c \
+					 spoplib.c \
 					 spop2.c
 
 libspop2_la_LIBADD = $(GLIB_LIBS)
@@ -30,6 +31,7 @@ libspop2py_la_SOURCES = \
 				     ran_gen.c \
 				     gamma.c \
 				     qnta.c \
+					 spoplib.c \
 					 spop2.c
 
 libspop2py_la_LIBADD = $(GLIB_LIBS)
