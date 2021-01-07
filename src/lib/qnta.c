@@ -123,6 +123,7 @@ char spop2_empty_devc(qunit *dev) {
         HASH_DEL((*dev), p);
         free(p);
     }
+    free(*dev);
     (*dev) = 0;
     return 0;
 }
@@ -365,6 +366,7 @@ char spop2_iterate_hazards(spop2 pop,
         HASH_DEL(pop->devc, p);
         free(p);
     }
+    free(pop->devc);
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
