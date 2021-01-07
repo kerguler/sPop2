@@ -188,9 +188,9 @@ char spop2_sdadd(spop2 pop, double dev, sdnum size) {
     }
     //
     if (pop->stochastic)
-        pop->size.i += qnt->size.i;
+        pop->size.i += size.i;
     else
-        pop->size.d += qnt->size.d;
+        pop->size.d += size.d;
     //
     return ret;
 }
