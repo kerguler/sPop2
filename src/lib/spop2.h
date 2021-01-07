@@ -225,14 +225,26 @@ char spop_iterate(spop, double, double, double, iter_func, double, double, doubl
 
 /* ******************************* */
 
+#define SPOPLIB_MoH 0
+#define SPOPLIB_MoA 1
+
+typedef struct spoplib_link_st *spoplib_link;
+
+struct spoplib_link_st {
+    unsigned int id;
+    char type;
+    void *pop;
+    UT_hash_handle hh;
+};
+
+void spoplib_print(unsigned int);
+void spoplib_destroy(unsigned int);
+void spoplib_destroy_all(void);
 unsigned int spoplib_init(unsigned char, unsigned char);
 void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double, double);
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
 void spoplib_retrieve(unsigned int, char, double *, double *, unsigned int *);
-void spoplib_print(unsigned int);
-void spoplib_destroy(unsigned int);
-void spoplib_destroy_all(void);
 
 /* ******************************* */
 
