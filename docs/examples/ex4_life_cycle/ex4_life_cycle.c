@@ -7,7 +7,6 @@ void print_out(unsigned int tm, spop2 *egg, spop2 *larva, spop2 *pupa, spop2 *ad
 int main(void) {
     unsigned char mode = MODE_ACCP_ERLANG;
     unsigned int tm = 0;
-    sdnum tmp;
     //
     spop2 egg = spop2_init(0, mode);
     spop2 larva = spop2_init(0, mode);
@@ -24,12 +23,9 @@ int main(void) {
         spop2_iterate(adult, 10, 1);
         //
         spop2_add(egg, 0, 1.0 * adult->size.d);
-        spop2_sdpopadd(larva, egg, 1, &tmp);
-        spop2_sdpopadd(pupa, larva, 1, &tmp);
-        //
-        spop2_survive(pupa,  0.5, 1, &tmp);
-        //
-        spop2_sdpopadd(adult, pupa, 1, &tmp);
+        spop2_add(larva, 0, egg->completed.d);
+        spop2_add(pupa, 0, larva->completed.d);
+        spop2_add(adult, 0, 0.5 * pupa->completed.d);
         //
         print_out(tm, &egg, &larva, &pupa, &adult);
     }
