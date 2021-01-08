@@ -299,11 +299,25 @@ char spop2_iterate_hazards(spop2 pop,
             if (QSIZE_ROUND_EPS) accd = QSIZE_ROUND(accd);
             if (accd >= ACCTHR) {
                 if (pop->stochastic) {
+                    item.i = p->size.i;
                     pop->completed.i += p->size.i;
                     p->size.i = 0;
                 } else {
+                    item.d = p->size.d;
                     pop->completed.d += p->size.d;
                     p->size.d = 0.0;
+                }
+                accd = ACCTHR - ONE;
+                qnt = qunit_new(accd, item);
+                if (!qnt) return 1;
+                HASH_FIND(hh, pop->devtable, &accd, sizeof(double), pp);
+                if (pp) {
+                    if (pop->stochastic)
+                        pp->size.i += item.i;
+                    else
+                        pp->size.d += item.d;
+                } else {
+                    HASH_ADD(hh, pop->devtable, dev, sizeof(double), qnt);
                 }
                 break;
             }
