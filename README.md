@@ -5,13 +5,13 @@
 </p>
 
 This is the standalone C library of the dynamically-structured matrix population model sPop2.
-This version implements both hazard-based and accumulative processes. While the method of hazards is reserved for survival, both methods can be used for development.
+This version implements both hazard-based and accumulative processes. While the method of hazards is implemented in the *spop* data structure, the method of accumulation is implemented in *spop2*.
 
 ## Installation
 
 **Configuration**
 
-Constructing configuration and Makefiles
+Construct configuration and Makefiles
 
 ```bash
 ./configure
@@ -28,13 +28,12 @@ sudo make install
 
 ## Using the library
 
-Including the created library with your project.
-
-*NOTE: you have to install the library before headers can be found, and linking can be done*
+Include the created library in your project.
 
 **C code snippet**
 
-*This example can be found in <a href="docs/examples/">docs/examples/</a>.*
+Please see <a href="docs/examples/">docs/examples</a> for further documentation and usage examples.
+The following is an excerpt from <a href="docs/examples/ex1_simple">ex1_simple</a>.
 
 ```c
 #include "spop2/spop2.h"
