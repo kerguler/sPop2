@@ -1,6 +1,7 @@
 ## Creating an sPop population
 
-The sPop2 library can be used to create a structured population.
+This is a sample routine to create a structured population with the *sPop2* library.
+Specifically, the following method uses the *spop* data structure to create an age-structured population.
 
 **C code snippet**
 
@@ -12,14 +13,14 @@ The sPop2 library can be used to create a structured population.
 Declare an spop object
 ```c
 spop pop = spop_init(0,                  // Deterministic
-                     MODE_GAMMA_HASH);   // Method of hazards with Gamma distribution
+                     MODE_GAMMA_HASH);   // Method of hazards with the Gamma distribution
 ```
 Introduce individuals to the population
 ```c
-spop_add(pop,    // The spop object 
-         0,      // Age                   (method of hazards)
-         0,      // Development cycle     (method of hazards)
-         0,      // Development indicator (method of hazards)
+spop_add(pop,    // The spop data structure 
+         0,      // Age                   
+         0,      // Development cycle     
+         0,      // Development indicator 
          1000);  // Population size
 ```
 Take one time step (survive and develop)
