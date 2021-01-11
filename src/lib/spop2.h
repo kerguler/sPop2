@@ -41,9 +41,10 @@ typedef double (*pfunc)(double, double);
 
 struct spop2_st {
     qunit devc;
-    qunit devtable;
     sdnum size;
-    sdnum completed;
+    sdnum dead;
+    sdnum developed;
+    qunit devtable;
     unsigned char stochastic;
     unsigned char pdist;
     pfunc cfun;
@@ -192,8 +193,7 @@ char spop2_sdadd(spop2, double, sdnum);
 char spop2_sdpopadd(spop2, spop2, char, sdnum *);
 void spop2_print(spop2);
 void spop2_retrieve(spop2, char, double *, double *, unsigned int *);
-char spop2_iterate(spop2, double, double);
-char spop2_survive(spop2, double, char, sdnum *);
+char spop2_iterate(spop2, double, double, double, char);
 
 /* ******************************* */
 

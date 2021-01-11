@@ -109,10 +109,12 @@ spop2 spop2_init(unsigned char stochastic, unsigned char pdist) {
     if (stochastic) {
         RANDOM = get_RAND_GSL();
         pop->size.i = 0;
-        pop->completed.i = 0;
+        pop->dead.i = 0;
+        pop->developed.i = 0;
     } else {
         pop->size.d = 0.0;
-        pop->completed.d = 0.0;
+        pop->dead.d = 0.0;
+        pop->developed.d = 0.0;
     }
     return pop;
 }
@@ -136,10 +138,12 @@ char spop2_empty(spop2 s) {
     //
     if (s->stochastic) {
         s->size.i = 0;
-        s->completed.i = 0;
+        s->dead.i = 0;
+        s->developed.i = 0;
     } else {
         s->size.d = 0.0;
-        s->completed.d = 0.0;
+        s->dead.d = 0.0;
+        s->developed.d = 0.0;
     }
     //
     return ret;
@@ -234,10 +238,11 @@ void spop2_print(spop2 s) {
     if (!s) return;
     printf("# m");
     PRINT_MODE(s->pdist);
-    printf(" s%d n%g c%g\n#dev,#size\n",
+    printf(" s%d n%g d%g c%g\n#dev,#size\n",
            s->stochastic,
            s->stochastic ? s->size.i : s->size.d,
-           s->stochastic ? s->completed.i : s->completed.d);
+           s->stochastic ? s->dead.i : s->dead.d,
+           s->stochastic ? s->developed.i : s->developed.d);
     qunit p, tmp;
     HASH_ITER(hh, s->devc, p, tmp) {
         printf("%g,%g\n",
@@ -267,17 +272,17 @@ void spop2_retrieve(spop2 s, char devtable, double *dev, double *size, unsigned 
     limit[0] = i;
 }
 
-char spop2_iterate_hazards(spop2 pop,
-                           double gamma_k,
-                           double gamma_theta,
-                           pfunc cfun) {
+char spop2_development(spop2 pop,
+                       double gamma_k,
+                       double gamma_theta,
+                       pfunc cfun) {
     spop2_empty_devc(&(pop->devtable));
     if (pop->stochastic) {
-        pop->completed.i = 0;
         pop->size.i = 0;
+        pop->developed.i = 0;
     } else {
-        pop->completed.d = 0.0;
         pop->size.d = 0.0;
+        pop->developed.d = 0.0;
     }
     //
     unsigned int dev = 0;
@@ -300,11 +305,11 @@ char spop2_iterate_hazards(spop2 pop,
             if (accd >= ACCTHR) {
                 if (pop->stochastic) {
                     item.i = p->size.i;
-                    pop->completed.i += p->size.i;
+                    pop->developed.i += p->size.i;
                     p->size.i = 0;
                 } else {
                     item.d = p->size.d;
-                    pop->completed.d += p->size.d;
+                    pop->developed.d += p->size.d;
                     p->size.d = 0.0;
                 }
                 accd = ACCTHR - ONE;
@@ -340,9 +345,9 @@ char spop2_iterate_hazards(spop2 pop,
             //
             if (accd >= ONE) {
                 if (pop->stochastic) {
-                    pop->completed.i += item.i;
+                    pop->developed.i += item.i;
                 } else {
-                    pop->completed.d += item.d;
+                    pop->developed.d += item.d;
                 }
                 accd -= ONE;
                 qnt = qunit_new(accd, item);
@@ -389,9 +394,55 @@ char spop2_iterate_hazards(spop2 pop,
     return 0;
 }
 
+char spop2_mortality(spop2 pop,
+                     double prob,
+                     char devtable) {
+    if (!devtable) {
+        if (pop->stochastic)
+            pop->dead.i = 0;
+        else
+            pop->dead.d = 0.0;
+    }
+    sdnum item;
+    qunit p, tmp;
+    qunit devc = devtable ? pop->devtable : pop->devc;
+    if (pop->stochastic) {
+        HASH_ITER(hh, devc, p, tmp) {
+            if (!(p->size.i)) continue;
+            item.i = gsl_ran_binomial(RANDOM,
+                                      prob,
+                                      p->size.i);
+            p->size.i -= item.i;
+            pop->size.i -= item.i;
+            if (!devtable)
+                pop->dead.i += item.i;
+            if (!(p->size.i)) {
+                HASH_DEL(devc, p);
+                free(p);
+            }
+        }
+    } else {
+        HASH_ITER(hh, devc, p, tmp) {
+            if (!(p->size.d)) continue;
+            item.d = p->size.d * prob;
+            p->size.d -= item.d;
+            pop->size.d -= item.d;
+            if (!devtable)
+                pop->dead.d += item.d;
+            if (!(p->size.d)) {
+                HASH_DEL(devc, p);
+                free(p);
+            }
+        }
+    }
+    return 0;
+}
+
 char spop2_iterate(spop2 pop,
                    double dev_mean,       // mean development time
-                   double dev_sd) {       // sd development time
+                   double dev_sd,         // sd development time
+                   double death,          // probability of death per iteration
+                   char devtable) {
     double gamma_k = 0.0,
             gamma_theta = 0.0;
     char pdist = pop->pdist;
@@ -458,43 +509,15 @@ char spop2_iterate(spop2 pop,
     //
     if (!pop->devc) return 1;
     //
-    return spop2_iterate_hazards(pop, gamma_k, gamma_theta, cfun);
-}
-
-char spop2_survive(spop2 pop, double prob, char devtable, sdnum *ret) {
-    ret->i = 0;
-    ret->d = 0.0;
-    pop->completed.i = 0;
-    pop->completed.d = 0.0;
-    sdnum item;
-    qunit p, tmp;
-    qunit devc = devtable ? pop->devtable : pop->devc;
-    if (pop->stochastic) {
-        HASH_ITER(hh, devc, p, tmp) {
-            if (!(p->size.i)) continue;
-            item.i = gsl_ran_binomial(RANDOM,
-                                      prob,
-                                      p->size.i);
-            p->size.i -= item.i;
-            pop->size.i -= item.i;
-            ret->i += item.i;
-            if (!(p->size.i)) {
-                HASH_DEL(devc, p);
-                free(p);
-            }
-        }
+    if (devtable) {
+        spop2_development(pop, gamma_k, gamma_theta, cfun);
+        if (death)
+            spop2_mortality(pop, death, devtable);
     } else {
-        HASH_ITER(hh, devc, p, tmp) {
-            if (!(p->size.d)) continue;
-            item.d = p->size.d * prob;
-            p->size.d -= item.d;
-            pop->size.d -= item.d;
-            ret->d += item.d;
-            if (!(p->size.d)) {
-                HASH_DEL(devc, p);
-                free(p);
-            }
-        }
+        if (death)
+            spop2_mortality(pop, death, devtable);
+        spop2_development(pop, gamma_k, gamma_theta, cfun);
     }
     return 0;
 }
+

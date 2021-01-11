@@ -177,13 +177,11 @@ void spoplib_iterate(unsigned int id,
             break;
         case SPOPLIB_MoA:
             pop2 = (spop2)(p->pop);
-            if (death_prob > 0) {
-                sdnum tmp;
-                spop2_survive(pop2,death_prob,0,&tmp);
-            }
             spop2_iterate(pop2,
                           dev_mean,
-                          dev_sd);
+                          dev_sd,
+                          death_prob,
+                          0);
             break;
         default:
             printf("Error: Unsupported spoplib type %d!\n", p->type);
@@ -218,12 +216,12 @@ void spoplib_read(unsigned int id, double *size, double *developed, double *dead
             pop2 = (spop2)(p->pop);
             if (pop2->stochastic) {
                 *size = (double)(pop2->size.i);
-                *developed = (double)(pop2->completed.i);
-                *dead = 0;
+                *developed = (double)(pop2->developed.i);
+                *dead = (double)(pop2->dead.i);
             } else {
                 *size = pop2->size.d;
-                *developed = pop2->completed.d;
-                *dead = 0.0;
+                *developed = pop2->developed.d;
+                *dead = pop2->dead.d;
             }
             break;
         default:
