@@ -20,10 +20,10 @@ int main(void) {
     print_out(tm, S, &E, &I, R);
     //
     for (tm=1; tm<100; tm++) {
-        spop_iterate(E,  0, 10, 1, 0,  0, 0, 0, 0,  0);
-        spop_iterate(I,  0, 10, 1, 0,  0, 0, 0, 0,  0);
+        spop_iterate(E,  0, 1, 1, 0,  0, 0, 0, 0,  0);
+        spop_iterate(I,  0, 7, 1, 0,  0, 0, 0, 0,  0);
         //
-        v = I->size.d / (S + E->size.d + I->size.d - 1.0 + R);
+        v = 0.4 * I->size.d / (S + E->size.d + I->size.d + R);
         //
         R += I->developed.d;
         spop_add(I, 0, 0, 0, E->developed.d);
