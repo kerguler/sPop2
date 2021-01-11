@@ -4,12 +4,12 @@ This is an example of a typical susceptible-exposed-infectious-recovered disease
 
 **C code snippet**
 
-*ex3_SEIR.c*
+*ex4_SEIR.c*
 
 
 
 **Compile and run**
 
 ```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex3_SEIR ex3_SEIR.c
+$ gcc -Wall -lm -lspop2 -lgsl -o ex4_SEIR ex4_SEIR.c
 ```

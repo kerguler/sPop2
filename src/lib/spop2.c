@@ -205,8 +205,7 @@ void spop_sdadd(spop s,
                 unsigned int age,
                 unsigned int devcycle,
                 unsigned int development,
-                sdnum number,
-                char devtable) {
+                sdnum number) {
     if (s->stochastic) {
         if (number.i <= 0) return;
     } else {
@@ -260,7 +259,7 @@ void spop_sdadd(spop s,
     qsort(s->individuals, s->cat, sizeof(individual_data), cmpfunc);
 }
 
-void spop_popadd(spop s, spop d, char devtable) {
+void spop_popadd(spop s, spop d) {
   unsigned int i;
   if (!d || !(d->individuals)) return;
   for (i=0; i<d->cat; i++)
@@ -268,8 +267,7 @@ void spop_popadd(spop s, spop d, char devtable) {
                d->individuals[i].age,
                d->individuals[i].devcycle,
                d->individuals[i].development,
-               d->individuals[i].number,
-               devtable);
+               d->individuals[i].number);
 }
 
 char calc_spop(spop s, individual_data *tmpn, double prob, sdnum *k) {
@@ -472,13 +470,16 @@ char spop_iterate(spop  s,
                            tmpn->age,
                            pause ? tmpn->devcycle : tmpn->devcycle + 1,
                            pause ? tmpn->development : 0,
-                           k,
-                           0);
+                           k);
             }
         }
         //
         spop_removeitem(s, &i, &remove);
     }
+    //
+    if (s->gamma_mode == MODE_GAMMA_HASH)
+        gamma_dist_check();
+    //
     return 0;
 }
 

@@ -214,10 +214,10 @@ void swap(spop, individual_data *, individual_data *);
       spop_var_tmp.i = (int)(number);                                     \
     else                                                                  \
       spop_var_tmp.d = (double)(number);                                  \
-    spop_sdadd((s),(age),(devcycle),(development),spop_var_tmp,0);        \
+    spop_sdadd((s),(age),(devcycle),(development),spop_var_tmp);          \
   }
-void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, sdnum, char);
-void spop_popadd(spop, spop, char);
+void spop_sdadd(spop, unsigned int, unsigned int, unsigned int, sdnum);
+void spop_popadd(spop, spop);
 
 typedef double (*prob_func)(unsigned int, double, double, double);
 typedef void (*iter_func)(const individual_data*, double*, double*, double*);

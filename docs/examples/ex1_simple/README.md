@@ -45,6 +45,8 @@ Cleanup and exit
 spop_destroy(&pop);
 ```
 
+*Note:* Please note that the *spop_destroy* statement does not free the memory occupied by the gamma hash. Although this needs to be freed separately with *gamma_hash_destroy*, it's memory allocation is checked at each iteration. The memory allocated to the gamma hash (default 10^9 bytes for *MODE_GAMMA_HASH*) can be changed by using *set_gamma_mem*.
+
 **Compile and run**
 
 ```bash
