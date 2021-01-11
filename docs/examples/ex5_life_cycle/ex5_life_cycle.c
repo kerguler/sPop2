@@ -16,16 +16,16 @@ int main(void) {
     spop2_add(egg, 0, 100);
     print_out(tm, &egg, &larva, &pupa, &adult);
     //
-    for (tm=1; tm<100; tm++) {
-        spop2_iterate(egg,   10, 1);
-        spop2_iterate(larva, 10, 1);
-        spop2_iterate(pupa,  10, 1);
-        spop2_iterate(adult, 10, 1);
+    for (tm=1; tm<200; tm++) {
+        spop2_iterate(egg,   10, 2, 0, 0);
+        spop2_iterate(larva, 10, 2, 0, 0);
+        spop2_iterate(pupa,  10, 2, 0, 0);
+        spop2_iterate(adult, 10, 2, 0, 0);
         //
         spop2_add(egg, 0, 1.0 * adult->size.d);
-        spop2_add(larva, 0, egg->completed.d);
-        spop2_add(pupa, 0, larva->completed.d);
-        spop2_add(adult, 0, 0.5 * pupa->completed.d);
+        spop2_add(larva, 0, egg->developed.d);
+        spop2_add(pupa, 0, larva->developed.d);
+        spop2_add(adult, 0, 0.5 * pupa->developed.d);
         //
         print_out(tm, &egg, &larva, &pupa, &adult);
     }
