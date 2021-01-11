@@ -1,6 +1,6 @@
 ## Insect life cycle
 
-This is an example of a typical insect life cycle modelled with sPop.
+This is an example of a typical insect life cycle modelled with the spop2 data structure (model of accumulation).
 
 **C code snippet**
 
