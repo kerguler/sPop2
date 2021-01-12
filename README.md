@@ -1,7 +1,7 @@
 # sPop2: a dynamically-structured matrix population model
 
 <p align="center">
-<img width="873" height=296" src="docs/figures/large_sPop2.jpg"/>
+<img width="623" height=211" src="docs/figures/large_sPop2.jpg"/>
 </p>
 
 This is the standalone C library of the dynamically-structured matrix population model sPop2.
