@@ -10,10 +10,15 @@ This is an example of a typical susceptible-exposed-infectious-recovered disease
 
 ```R
 d<-read.csv("out.csv",header=F)
-plot(d[,1],d[,2],t="l",ylim=c(0,100))
-lines(d[,1],d[,3])
-lines(d[,1],d[,4])
-lines(d[,1],d[,5])
+plot(d[,2],d[,3],t="l",ylim=c(0,100))
+lines(d[,2],d[,4])
+lines(d[,2],d[,5])
+lines(d[,2],d[,6])
+
+d1<-read.csv("out.csv",header=F)
+d2<-read.csv("out2.csv",header=F)
+plot(d1[,2],d1[,3],t="l",xlim=c(0,100),ylim=c(0,100))
+lines(d2[,2],d2[,3])
 ```
 
 **Compile and run**

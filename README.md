@@ -70,5 +70,5 @@ sudo make uninstall
 
 ## References
 
+* Erguler K. and Mendel J. A dynamically-structured matrix population model based on renewal processes for accumulative development under variable environmental conditions. BioRxiv. 2021
 * Erguler K. sPop: Age-structured discrete-time population dynamics model in C, Python, and R [version 3; peer review: 2 approved]. F1000Research 2020, 7:1220 (https://doi.org/10.12688/f1000research.15824.3)
-* BioRxiv
