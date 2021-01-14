@@ -68,17 +68,18 @@ void sim_spop(double tau) {
     for (tm=1; tm<300*tau; tm++) {
         v = tau_beta * I->size.d * S / N;
         //
-        S -= tau_mu * S;
         //spop_iterate(E,  0, tau_sigma_m, tau_sigma_s, 0,  tau_mu, 0, 0, 0,  0);
         //spop_iterate(I,  0, tau_gamma_m, tau_gamma_s, 0,  tau_mu, 0, 0, 0,  0);
         spop_iterate(E,  tau_sigma_m, 0, 0, 0,  tau_mu, 0, 0, 0,  0);
         spop_iterate(I,  tau_gamma_m, 0, 0, 0,  tau_mu, 0, 0, 0,  0);
-        R -= tau_mu * R;
         //
-        R += I->developed.d;
+        // This is a Matrix Population Model
+        // It needs a projection matrix to work
+        //
+        R = I->developed.d + tau_mu * R;
         spop_add(I, 0, 0, 0, E->developed.d);
         spop_add(E, 0, 0, 0, v);
-        S += tau_mu * N - v;
+        S = tau_mu * N + tau_mu * S - v;
         //
         print_out((double)(tm)/tau, S, &E, &I, R);
     }
