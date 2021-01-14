@@ -16,7 +16,7 @@ lines(d[,2],d[,5])
 lines(d[,2],d[,6])
 
 d1<-read.csv("out.csv",header=F)
-plot(d1[,2],d1[,3],t="l",xlim=c(0,100),ylim=c(0,100))
+plot(d1[,2],d1[,3],t="p",pch=16,cex=0.5,col=rainbow(3)[d1[,1]+1],xlim=c(0,100),ylim=c(0,100))
 ```
 
 **Compile and run**
