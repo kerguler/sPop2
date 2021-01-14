@@ -5,13 +5,13 @@
 
 // For measles (Anderson, May, Anderson - 1992 - Table 1.3)
 double N = 100.0;
-double sigma_m = 7.5, sigma_s = 7.5;//1.5;
-double gamma_m = 6.5, gamma_s = 6.5;//0.5;
-double mu = 0.0;
+double sigma_m = 7.5, sigma_s = 1.5;
+double gamma_m = 6.5, gamma_s = 0.5;
+double mu = 0.01;
 double beta = 1.0;
 
-void print_out(unsigned int tm, double S, spop *E, spop *I, double R) {
-    printf("1,%d,%g,%g,%g,%g\n",tm,S,(*E)->size.d,(*I)->size.d,R);
+void print_out(double tm, double S, spop *E, spop *I, double R) {
+    printf("1,%g,%g,%g,%g,%g\n",tm,S,(*E)->size.d,(*I)->size.d,R);
 }
 
 int func (double t, const double y[], double f[], void *params) {
@@ -43,17 +43,16 @@ void sim_ode(void) {
     gsl_odeiv2_driver_free(d);
 }
 
-void sim_spop(void) {
+void sim_spop(double tau) {
     unsigned char mode = MODE_GAMMA_HASH;
     unsigned int tm = 0;
-    double tau = 4.0;
     //
-    double tau_sigma_m = sigma_m * tau;
+    double tau_sigma_m = 1.0-pow(1.0-(1.0/sigma_m), 1.0/tau); // sigma_m * tau;
     double tau_sigma_s = sigma_s * tau;
-    double tau_gamma_m = gamma_m * tau;
+    double tau_gamma_m = 1.0-pow(1.0-(1.0/gamma_m), 1.0/tau); // gamma_m * tau;
     double tau_gamma_s = gamma_s * tau;
     double tau_mu = 1.0-pow(1.0-mu, 1.0/tau);
-    double tau_beta = pow(beta, 1.0/tau);
+    double tau_beta = beta / tau;
     //
     double S = 0;
     spop E = spop_init(0, mode);
@@ -63,15 +62,17 @@ void sim_spop(void) {
     double v = 0;
     //
     S = N-1.0;
-    spop_add(I, 0, 0, 0, 1.0);
-    print_out(tm, S, &E, &I, R);
+    spop_add(E, 0, 0, 0, 1.0);
+    print_out((double)(tm)/tau, S, &E, &I, R);
     //
     for (tm=1; tm<300*tau; tm++) {
         v = tau_beta * I->size.d * S / N;
         //
         S -= tau_mu * S;
-        spop_iterate(E,  0, tau_sigma_m, tau_sigma_s, 0,  tau_mu, 0, 0, 0,  0);
-        spop_iterate(I,  0, tau_gamma_m, tau_gamma_s, 0,  tau_mu, 0, 0, 0,  0);
+        //spop_iterate(E,  0, tau_sigma_m, tau_sigma_s, 0,  tau_mu, 0, 0, 0,  0);
+        //spop_iterate(I,  0, tau_gamma_m, tau_gamma_s, 0,  tau_mu, 0, 0, 0,  0);
+        spop_iterate(E,  tau_sigma_m, 0, 0, 0,  tau_mu, 0, 0, 0,  0);
+        spop_iterate(I,  tau_gamma_m, 0, 0, 0,  tau_mu, 0, 0, 0,  0);
         R -= tau_mu * R;
         //
         R += I->developed.d;
@@ -79,7 +80,7 @@ void sim_spop(void) {
         spop_add(E, 0, 0, 0, v);
         S += tau_mu * N - v;
         //
-        print_out(tm, S, &E, &I, R);
+        print_out((double)(tm)/tau, S, &E, &I, R);
     }
     //
     spop_destroy(&E);
@@ -88,6 +89,6 @@ void sim_spop(void) {
 
 int main(void) {
     sim_ode();
-    sim_spop();
+    sim_spop(5.0);
     return 0;
 }
