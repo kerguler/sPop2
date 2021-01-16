@@ -3,16 +3,12 @@
 #include <gsl/gsl_odeiv2.h>
 #include <math.h>
 
-// For measles (Anderson, May, Anderson - 1992 - Table 1.3)
+// For measles (Anderson, May, Anderson - 1992 - Table 1.3 - pp. 10)
 double N = 100.0;
-double sigma_m = 7.5, sigma_s = 7.5; // 1.5;
-double gamma_m = 6.5, gamma_s = 6.5; // 0.5;
+double sigma_m = 7.5, sigma_s = 7.5;
+double gamma_m = 6.5, gamma_s = 6.5;
 double mu = 0.01;
 double beta = 1.0;
-
-void print_out(double tm, double S, spop *E, spop *I, double R) {
-    printf("1,%g,%g,%g,%g,%g\n",tm,S,(*E)->size.d,(*I)->size.d,R);
-}
 
 int func (double t, const double y[], double f[], void *params) {
     (void) (t); /* avoid unused parameter warning */
@@ -29,7 +25,7 @@ void sim_ode(void) {
     int i;
     double t = 0.0, t1 = 300.0;
     double y[4] = {N-1.0, 0.0, 1.0, 0.0};
-    printf("0,%g,%g,%g,%g,%g\n", t, y[0], y[1], y[2], y[3]);
+    printf("0,1,%g,%g,%g,%g,%g\n", t, y[0], y[1], y[2], y[3]);
 
     for (i = 1; i <= 1000; i++) {
         double ti = i * t1 / 1000.0;
@@ -38,19 +34,20 @@ void sim_ode(void) {
             printf("error, return value=%d\n", status);
             break;
         }
-        printf("0,%g,%g,%g,%g,%g\n", t, y[0], y[1], y[2], y[3]);
+        printf("0,1,%g,%g,%g,%g,%g\n", t, y[0], y[1], y[2], y[3]);
     }
     gsl_odeiv2_driver_free(d);
 }
 
-void sim_spop(double tau) {
+void sim_spop(double sd) {
     unsigned char mode = MODE_GAMMA_HASH;
     unsigned int tm = 0;
+    double tau = 10.0;
     //
     double tau_sigma_m = sigma_m * tau;
-    double tau_sigma_s = sigma_s * tau;
+    double tau_sigma_s = sigma_s * sd * tau;
     double tau_gamma_m = gamma_m * tau;
-    double tau_gamma_s = gamma_s * tau;
+    double tau_gamma_s = gamma_s * sd * tau;
     double tau_mu = 1.0-pow(1.0-mu, 1.0/tau);
     double tau_beta = beta / tau;
     //
@@ -63,7 +60,7 @@ void sim_spop(double tau) {
     //
     S = N-1.0;
     spop_add(I, 0, 0, 0, 1.0);
-    print_out((double)(tm)/tau, S, &E, &I, R);
+    printf("1,%g,%g,%g,%g,%g,%g\n",sd,(double)(tm)/tau,S,E->size.d,I->size.d,R);
     //
     for (tm=1; tm<300*tau; tm++) {
         v = tau_beta * I->size.d * S / N;
@@ -76,7 +73,7 @@ void sim_spop(double tau) {
         spop_add(E, 0, 0, 0, v);
         S = tau_mu * N + (1.0 - tau_mu) * S - v;
         //
-        print_out((double)(tm)/tau, S, &E, &I, R);
+        printf("1,%g,%g,%g,%g,%g,%g\n",sd,(double)(tm)/tau,S,E->size.d,I->size.d,R);
     }
     //
     spop_destroy(&E);
@@ -86,6 +83,6 @@ void sim_spop(double tau) {
 int main(void) {
     sim_ode();
     sim_spop(1.0);
-    sim_spop(5.0);
+    sim_spop(0.5);
     return 0;
 }
