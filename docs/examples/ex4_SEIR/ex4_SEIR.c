@@ -3,7 +3,6 @@
 #include <gsl/gsl_odeiv2.h>
 #include <math.h>
 
-// For measles (Anderson, May, Anderson - 1992 - Table 1.3 - pp. 10)
 double N = 100.0;
 double sigma_m = 7.5, sigma_s = 7.5;
 double gamma_m = 6.5, gamma_s = 6.5;
@@ -22,11 +21,11 @@ int func (double t, const double y[], double f[], void *params) {
 void sim_ode(void) {
     gsl_odeiv2_system sys = {func, 0, 4, 0};
     gsl_odeiv2_driver *d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd, 1e-6, 1e-6, 0.0);
-    int i;
     double t = 0.0, t1 = 300.0;
     double y[4] = {N-1.0, 0.0, 1.0, 0.0};
     printf("0,1,%g,%g,%g,%g,%g\n", t, y[0], y[1], y[2], y[3]);
 
+    int i;
     for (i = 1; i <= 1000; i++) {
         double ti = i * t1 / 1000.0;
         int status = gsl_odeiv2_driver_apply(d, &t, ti, y);
