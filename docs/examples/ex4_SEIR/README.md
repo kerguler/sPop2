@@ -12,6 +12,7 @@ double gamma_m = 6.5, gamma_s = 6.5;  // Duration of the infectious period (mean
 double mu = 0.01;                     // Death and reproduction rate
 double beta = 1.0;                    // Transmission coefficient
 ```
+
 *ex4_SEIR.c*
 
 Here, we compare the ODE and sPop representations of the disease dynamics. The following function is required for the ODE model.
@@ -78,6 +79,13 @@ for (tm=1; tm<300*tau; tm++) {
 spop_destroy(&E);
 spop_destroy(&I);
 ```
+
+**Compile and run**
+
+```bash
+$ gcc -Wall -lm -lspop2 -lgsl -o ex4_SEIR ex4_SEIR.c
+```
+
 **Visualisation in R**
 
 ```r
@@ -87,10 +95,4 @@ xr <- d[,1]==0; lines(d[xr,3],d[xr,6],col="blue",lwd=4)
 xr <- (d[,1]==1) & (d[,2]==1); lines(d[xr,3],d[xr,6],col="red",lwd=3)
 xr <- (d[,1]==1) & (d[,2]==0.5); lines(d[xr,3],d[xr,6],col="black",lwd=2)
 legend("topright",c("ODE","sPop - Exponential","sPop - Gamma"),col=c("blue","red","black"),lwd=c(4,3,2))
-```
-
-**Compile and run**
-
-```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex4_SEIR ex4_SEIR.c
 ```
