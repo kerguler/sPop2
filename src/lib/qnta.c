@@ -276,15 +276,6 @@ char spop2_development(spop2 pop,
                        double gamma_k,
                        double gamma_theta,
                        pfunc cfun) {
-    spop2_empty_devc(&(pop->devtable));
-    if (pop->stochastic) {
-        pop->size.i = 0;
-        pop->developed.i = 0;
-    } else {
-        pop->size.d = 0.0;
-        pop->developed.d = 0.0;
-    }
-    //
     unsigned int dev = 0;
     double accd = 0.0;
     double haz = 0.0, h0 = 0.0, h1 = 0.0;
@@ -397,12 +388,6 @@ char spop2_development(spop2 pop,
 char spop2_mortality(spop2 pop,
                      double prob,
                      char devtable) {
-    if (!devtable) {
-        if (pop->stochastic)
-            pop->dead.i = 0;
-        else
-            pop->dead.d = 0.0;
-    }
     sdnum item;
     qunit p, tmp;
     qunit devc = devtable ? pop->devtable : pop->devc;
@@ -447,6 +432,19 @@ char spop2_iterate(spop2 pop,
             gamma_theta = 0.0;
     char pdist = pop->pdist;
     pfunc cfun = pop->cfun;
+    //
+    if (pop->stochastic) {
+        pop->size.i = 0;
+        pop->developed.i = 0;
+        pop->dead.i = 0;
+    } else {
+        pop->size.d = 0.0;
+        pop->developed.d = 0.0;
+        pop->dead.d = 0.0;
+    }
+    spop2_empty_devc(&(pop->devtable));
+    if (!pop->devc) return 1;
+    //
     if (dev_sd == 0) {
         pdist = MODE_ACCP_FIXED;
         if (!spop2_get_cfun(pdist, &cfun)) return 1;
@@ -507,8 +505,6 @@ char spop2_iterate(spop2 pop,
         return 1;
     }
     //
-    if (!pop->devc) return 1;
-    //
     if (devtable) {
         spop2_development(pop, gamma_k, gamma_theta, cfun);
         if (death)
@@ -518,6 +514,7 @@ char spop2_iterate(spop2 pop,
             spop2_mortality(pop, death, devtable);
         spop2_development(pop, gamma_k, gamma_theta, cfun);
     }
+    //
     return 0;
 }
 
