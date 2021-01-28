@@ -112,7 +112,6 @@ typedef struct individual_st {
  *                MODE_NBINOM_RAW
  *  stochastic:   0: deterministic
  *                1: stochastic
- *  accumulative: logical indicator for an accumulative development process
  */
 typedef struct population_st {
   individual_data *individuals;
@@ -124,7 +123,6 @@ typedef struct population_st {
   void *devtable;
   unsigned char gamma_mode;
   unsigned char stochastic;
-  unsigned char accumulative;
 } *spop;
 
 /* ******************************* */
@@ -203,6 +201,7 @@ void set_DPOP_MAX_DAYS(unsigned int);
 spop spop_init(unsigned char, unsigned char);
 void spop_empty(spop);
 void spop_destroy(spop*);
+void spop_retrieve(spop, char, double *, double *, unsigned int *);
 void spop_print(spop);
 void spop_print_to_csv(spop);
 
@@ -245,6 +244,7 @@ void spoplib_add(unsigned int, unsigned int, unsigned int, unsigned int, double,
 void spoplib_iterate(unsigned int, double, double, double, double, double, double);
 void spoplib_read(unsigned int, double *, double *, double *);
 void spoplib_retrieve(unsigned int, char, double *, double *, unsigned int *);
+void spoplib_age_structure(unsigned int, char, double *, double *, unsigned int *);
 
 /* ******************************* */
 

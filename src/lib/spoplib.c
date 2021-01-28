@@ -243,3 +243,16 @@ void spoplib_retrieve(unsigned int id, char devtable, double *dev, double *size,
     pop2 = (spop2) (p->pop);
     spop2_retrieve(pop2, devtable, dev, size, limit);
 }
+
+void spoplib_age_structure(unsigned int id, char devtable, double *dev, double *size, unsigned int *limit) {
+    spop pop;
+    spoplib_link p;
+    HASH_FIND(hh, pop_link, &id, sizeof(unsigned int), p);
+    if (!p) {
+        printf("Error: spoplib id %d not found!\n", id);
+        return;
+    }
+    if (!(p->type == SPOPLIB_MoH)) return;
+    pop = (spop) (p->pop);
+    spop_retrieve(pop, devtable, dev, size, limit);
+}

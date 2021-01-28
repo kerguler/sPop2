@@ -113,6 +113,17 @@ void spop_destroy(spop *s) {
   }
 }
 
+void spop_retrieve(spop s, char devtable, double *dev, double *size, unsigned int *limit) {
+    if (!s) return;
+    unsigned int count;
+    individual_data *table = devtable ? ((spop) (s->devtable))->individuals : s->individuals;
+    for (count = 0; count < s->cat; count++) {
+        dev[count] = table[count].development;
+        size[count] = s->stochastic ? (double)(table[count].number.i) : table[count].number.d;
+    }
+    *limit = count;
+}
+
 void spop_print(spop s) {
     if (!s) return;
     unsigned int count;
