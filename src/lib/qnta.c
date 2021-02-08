@@ -285,6 +285,11 @@ char spop2_development(spop2 pop,
     qunit devc = 0, qnt = 0;
     qunit pp = 0;
     //
+    if (pop->stochastic)
+        pop->size.i = 0;
+    else
+        pop->size.d = 0.0;
+    //
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         for (dev = 0;
@@ -434,11 +439,9 @@ char spop2_iterate(spop2 pop,
     pfunc cfun = pop->cfun;
     //
     if (pop->stochastic) {
-        pop->size.i = 0;
         pop->developed.i = 0;
         pop->dead.i = 0;
     } else {
-        pop->size.d = 0.0;
         pop->developed.d = 0.0;
         pop->dead.d = 0.0;
     }
