@@ -8,27 +8,7 @@
 #include <gsl/gsl_randist.h>
 #include "spop2.h"
 
-/*
-#include <signal.h>
-void (*signal(int signum, void (*sighandler)(int)))(int);
-void clean_exit_on_sig(int sig_num) {
-    printf ("\n Signal %d received\n",sig_num);
-    exit(1);
-}
-*/
-
-/*
-#define free(pointer) {printmem(0,0,sizeof(*(pointer)),__FILE__,__LINE__); free((pointer));}
-void *printmem(int, void *, size_t, char *, int);
-
-void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
-    static size_t total = 0;
-    total += (type?1:-1)*size;
-    printf("%d: %s: %d: %d: %d\n",type,filen,linen,(int)(size),(int)(total));
-    return pointer;
-}
-*/
-
+#define ZERO ((double)(0.0))
 #define ONE ((double)(1.0))
 /*
  * WARNING: If this is not high enough,
@@ -120,6 +100,7 @@ spop2 spop2_init(unsigned char stochastic, unsigned char pdist) {
 }
 
 char spop2_empty_devc(qunit *dev) {
+    if (!(*dev)) return 0;
     qunit p, tmp;
     HASH_ITER(hh, (*dev), p, tmp) {
         HASH_DEL((*dev), p);
@@ -290,6 +271,7 @@ char spop2_development(spop2 pop,
     else
         pop->size.d = 0.0;
     //
+    if (!(HASH_COUNT(pop->devc))) return 0;
     unsigned int counter = 0;
     HASH_ITER(hh, pop->devc, p, tmp) {
         for (dev = 0;
@@ -396,35 +378,43 @@ char spop2_mortality(spop2 pop,
     sdnum item;
     qunit p, tmp;
     qunit devc = devtable ? pop->devtable : pop->devc;
+    //
+    if (!(HASH_COUNT(devc))) return 0;
     if (pop->stochastic) {
         HASH_ITER(hh, devc, p, tmp) {
-            if (!(p->size.i)) continue;
-            item.i = gsl_ran_binomial(RANDOM,
-                                      prob,
-                                      p->size.i);
-            p->size.i -= item.i;
-            pop->size.i -= item.i;
-            if (!devtable)
-                pop->dead.i += item.i;
-            if (!(p->size.i)) {
+            if (p->size.i) {
+                item.i = gsl_ran_binomial(RANDOM,
+                                          prob,
+                                          p->size.i);
+                p->size.i -= item.i;
+                pop->size.i -= item.i;
+                if (!devtable)
+                    pop->dead.i += item.i;
+            }
+            if (p->size.i == 0) {
                 HASH_DEL(devc, p);
                 free(p);
             }
         }
     } else {
         HASH_ITER(hh, devc, p, tmp) {
-            if (!(p->size.d)) continue;
-            item.d = p->size.d * prob;
-            p->size.d -= item.d;
-            pop->size.d -= item.d;
-            if (!devtable)
-                pop->dead.d += item.d;
-            if (!(p->size.d)) {
+            if (p->size.d) {
+                item.d = p->size.d * prob;
+                p->size.d -= item.d;
+                pop->size.d -= item.d;
+                if (!devtable)
+                    pop->dead.d += item.d;
+            }
+            if (p->size.d == ZERO) {
                 HASH_DEL(devc, p);
                 free(p);
             }
         }
     }
+    if (devtable)
+        pop->devtable = devc;
+    else
+        pop->devc = devc;
     return 0;
 }
 
@@ -434,7 +424,7 @@ char spop2_iterate(spop2 pop,
                    double death,          // probability of death per iteration
                    char devtable) {
     double gamma_k = 0.0,
-            gamma_theta = 0.0;
+           gamma_theta = 0.0;
     char pdist = pop->pdist;
     pfunc cfun = pop->cfun;
     //
