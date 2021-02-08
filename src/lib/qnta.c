@@ -8,6 +8,26 @@
 #include <gsl/gsl_randist.h>
 #include "spop2.h"
 
+/*
+#define realloc(pointer,size) printmem(1,(void *)realloc((pointer),(size)),(size),__FILE__,__LINE__)
+#define calloc(number,size) printmem(1,(void *)calloc((number),(size)),(number)*(size),__FILE__,__LINE__)
+#define malloc(size) printmem(1,(void *)malloc((size)),(size),__FILE__,__LINE__)
+#define free(pointer) {printmem(0,0,sizeof(*(pointer)),__FILE__,__LINE__); free((pointer));}
+void *printmem(int, void *, size_t, char *, int);
+
+void *printmem(int type, void *pointer, size_t size, char *filen, int linen) {
+    static size_t total = 0;
+    total += (type?1:-1)*size;
+    printf("%d: %s: %d: %d: %d\n",type,filen,linen,(int)(size),(int)(total));
+    return pointer;
+}
+*/
+int qunits = 0;
+void set_qunits(int more) {
+    qunits += more;
+    printf("qunits = %d\n",qunits);
+}
+
 #define ZERO ((double)(0.0))
 #define ONE ((double)(1.0))
 /*
@@ -104,10 +124,9 @@ char spop2_empty_devc(qunit *dev) {
     qunit p, tmp;
     HASH_ITER(hh, (*dev), p, tmp) {
         HASH_DEL((*dev), p);
-        free(p);
+        qunit_free(&p);
     }
-    free(*dev);
-    (*dev) = 0;
+    qunit_free(dev);
     return 0;
 }
 
@@ -291,8 +310,6 @@ char spop2_development(spop2 pop,
                     p->size.d = 0.0;
                 }
                 accd = ACCTHR - ONE;
-                qnt = qunit_new(accd, item);
-                if (!qnt) return 1;
                 HASH_FIND(hh, pop->devtable, &accd, sizeof(double), pp);
                 if (pp) {
                     if (pop->stochastic)
@@ -300,6 +317,8 @@ char spop2_development(spop2 pop,
                     else
                         pp->size.d += item.d;
                 } else {
+                    qnt = qunit_new(accd, item);
+                    if (!qnt) return 1;
                     HASH_ADD(hh, pop->devtable, dev, sizeof(double), qnt);
                 }
                 break;
@@ -328,8 +347,6 @@ char spop2_development(spop2 pop,
                     pop->developed.d += item.d;
                 }
                 accd -= ONE;
-                qnt = qunit_new(accd, item);
-                if (!qnt) return 1;
                 HASH_FIND(hh, pop->devtable, &accd, sizeof(double), pp);
                 if (pp) {
                     if (pop->stochastic)
@@ -337,6 +354,8 @@ char spop2_development(spop2 pop,
                     else
                         pp->size.d += item.d;
                 } else {
+                    qnt = qunit_new(accd, item);
+                    if (!qnt) return 1;
                     HASH_ADD(hh, pop->devtable, dev, sizeof(double), qnt);
                 }
             } else {
@@ -345,8 +364,7 @@ char spop2_development(spop2 pop,
                 } else {
                     pop->size.d += item.d;
                 }
-                qnt = qunit_new(accd, item);
-                if (!qnt) return 1;
+                //
                 HASH_FIND(hh, devc, &accd, sizeof(double), pp);
                 if (pp) {
                     if (pop->stochastic)
@@ -354,6 +372,8 @@ char spop2_development(spop2 pop,
                     else
                         pp->size.d += item.d;
                 } else {
+                    qnt = qunit_new(accd, item);
+                    if (!qnt) return 1;
                     HASH_ADD(hh, devc, dev, sizeof(double), qnt);
                     counter++;
                 }
@@ -361,9 +381,10 @@ char spop2_development(spop2 pop,
         }
         //
         HASH_DEL(pop->devc, p);
-        free(p);
+        qunit_free(&p);
     }
-    free(pop->devc);
+    //
+    qunit_free(&(pop->devc));
     pop->devc = devc;
     //
     if (counter > QSIZE_MAX)
@@ -393,7 +414,7 @@ char spop2_mortality(spop2 pop,
             }
             if (p->size.i == 0) {
                 HASH_DEL(devc, p);
-                free(p);
+                qunit_free(&p);
             }
         }
     } else {
@@ -407,7 +428,7 @@ char spop2_mortality(spop2 pop,
             }
             if (p->size.d == ZERO) {
                 HASH_DEL(devc, p);
-                free(p);
+                qunit_free(&p);
             }
         }
     }
