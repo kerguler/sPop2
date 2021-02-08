@@ -494,7 +494,7 @@ char spop2_iterate(spop2 pop,
     }
     //
     if (gamma_k == 0) {
-        printf("Error: 0 mean is not acceptable!\n");
+        printf("Error: k=0 is not acceptable!\n");
         return 1;
     }
     //
