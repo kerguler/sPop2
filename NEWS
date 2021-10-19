@@ -1,10 +1,17 @@
 News
 ====
 
+2.0.1
+-----
+
+* Release date: UNRELEASED*
+
+* Included the documentation and example files in the tar zip.
+
 2.0.0
 ------
 
-* Release date: UNRELEASED*
+* Release date: 4 Feb 2021*
 
 * This is the initial draft of sPop v.2 with accumulative development (sPop2: C)
   This package is derived from the C implementation of the sPop model

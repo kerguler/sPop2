@@ -45,7 +45,7 @@ spop2_destroy(&pop2);
 **Compile and run**
 
 ```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex2_compare ex2_compare.c
+$ gcc -o ex2_compare ex2_compare.c -Wall -lm -lspop2 -lgsl
 ```
 
 **Note**

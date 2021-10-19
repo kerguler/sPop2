@@ -50,5 +50,5 @@ spop_destroy(&pop);
 **Compile and run**
 
 ```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex1_simple ex1_simple.c
+$ gcc -o ex1_simple ex1_simple.c -Wall -lm -lspop2 -lgsl 
 ```

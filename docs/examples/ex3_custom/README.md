@@ -51,5 +51,5 @@ spop_destroy(&vec);
 **Compile and run**
 
 ```bash
-$ gcc -Wall -lm -lspop2 -lgsl -o ex3_custom ex3_custom.c
+$ gcc -o ex3_custom ex3_custom.c -Wall -lm -lspop2 -lgsl
 ```
