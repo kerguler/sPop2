@@ -83,7 +83,7 @@ spop_destroy(&I);
 **Compile and run**
 
 ```bash
-$ gcc -o ex4_SEIR ex4_SEIR.c -Wall -lm -lspop2 -lgsl
+$ gcc -o ex4_SEIR ex4_SEIR.c -Wall -lm -lspop2 -lgsl -lgslcblas
 ```
 
 **Visualisation in R**

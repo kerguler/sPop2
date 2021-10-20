@@ -48,5 +48,5 @@ spop2_destroy(&adult);
 **Compile and run**
 
 ```bash
-$ gcc -o ex5_life_cycle ex5_life_cycle.c -Wall -lm -lspop2 -lgsl
+$ gcc -o ex5_life_cycle ex5_life_cycle.c -Wall -lm -lspop2 -lgsl -lgslcblas
 ```
