@@ -8,6 +8,10 @@ src/lib/.deps
 src/lib/.libs
 tutorial_Autotools*
 
+# VSCode
+
+.vscode
+
 # http://www.gnu.org/software/automake
 
 Makefile.in
