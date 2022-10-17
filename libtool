@@ -66,14 +66,14 @@ ECHO="printf %s\\n"
 PATH_SEPARATOR=":"
 
 # The host system.
-host_alias=
-host=x86_64-apple-darwin19.6.0
-host_os=darwin19.6.0
+host_alias=x86_64-apple-darwin13.4.0
+host=x86_64-apple-darwin13.4.0
+host_os=darwin13.4.0
 
 # The build system.
-build_alias=
-build=x86_64-apple-darwin19.6.0
-build_os=darwin19.6.0
+build_alias=x86_64-apple-darwin13.4.0
+build=x86_64-apple-darwin13.4.0
+build_os=darwin13.4.0
 
 # A sed program that does not truncate output.
 SED="/usr/bin/sed"
@@ -91,7 +91,7 @@ EGREP="/usr/bin/grep -E"
 FGREP="/usr/bin/grep -F"
 
 # A BSD- or MS-compatible name lister.
-NM="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-nm"
+NM="x86_64-apple-darwin13.4.0-nm"
 
 # Whether we need soft or hard links.
 LN_S="ln -s"
@@ -142,7 +142,7 @@ DLLTOOL="false"
 sharedlib_from_linklib_cmd="printf %s\\n"
 
 # The archiver.
-AR="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-ar"
+AR="x86_64-apple-darwin13.4.0-ar"
 
 # Flags to create an archive.
 AR_FLAGS="cru"
@@ -151,10 +151,10 @@ AR_FLAGS="cru"
 archiver_list_spec=""
 
 # A symbol stripping program.
-STRIP="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-strip"
+STRIP="x86_64-apple-darwin13.4.0-strip"
 
 # Commands used to install an old-style archive.
-RANLIB="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-ranlib"
+RANLIB="x86_64-apple-darwin13.4.0-ranlib"
 old_postinstall_cmds="chmod 644 \$oldlib~\$RANLIB \$tool_oldlib"
 old_postuninstall_cmds=""
 
@@ -162,10 +162,10 @@ old_postuninstall_cmds=""
 lock_old_archive_extraction=yes
 
 # A C compiler.
-LTCC="gcc"
+LTCC="x86_64-apple-darwin13.4.0-clang"
 
 # LTCC compiler flags.
-LTCFLAGS="-march=core2 -mtune=haswell -mssse3 -ftree-vectorize -fPIC -fPIE -fstack-protector-strong -O2 -pipe"
+LTCFLAGS="-march=core2 -mtune=haswell -mssse3 -ftree-vectorize -fPIC -fPIE -fstack-protector-strong -O2 -pipe -isystem /Users/kamil/anaconda3/include"
 
 # Take the output of nm and produce a listing of raw symbols and C names.
 global_symbol_pipe="sed -n -e 's/^.*[	 ]\\([BCDEGRST][BCDEGRST]*\\)[	 ][	 ]*_\\([_A-Za-z][_A-Za-z0-9]*\\)\$/\\1 _\\2 \\2/p' | sed '/ __gnu_lto/d'"
@@ -210,13 +210,13 @@ MANIFEST_TOOL=":"
 DSYMUTIL="dsymutil"
 
 # Tool to change global to local symbols on Mac OS X.
-NMEDIT="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-nmedit"
+NMEDIT="x86_64-apple-darwin13.4.0-nmedit"
 
 # Tool to manipulate fat objects and archives on Mac OS X.
-LIPO="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-lipo"
+LIPO="x86_64-apple-darwin13.4.0-lipo"
 
 # ldd/readelf like tool for Mach-O binaries on Mac OS X.
-OTOOL="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-otool"
+OTOOL="x86_64-apple-darwin13.4.0-otool"
 
 # ldd/readelf like tool for 64 bit Mach-O binaries on Mac OS X 10.4.
 OTOOL64=":"
@@ -282,7 +282,7 @@ finish_eval=""
 hardcode_into_libs=no
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/Library/Developer/CommandLineTools/usr/lib/clang/11.0.0  /usr/local/lib"
+sys_lib_search_path_spec="/Users/kamil/anaconda3/lib/clang/12.0.0  /usr/local/lib"
 
 # Detected run-time system search path for libraries.
 sys_lib_dlsearch_path_spec="/usr/local/lib /lib /usr/lib"
@@ -300,12 +300,12 @@ dlopen_self=unknown
 dlopen_self_static=unknown
 
 # Commands to strip libraries.
-old_striplib="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-strip -S"
-striplib="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-strip -x"
+old_striplib="x86_64-apple-darwin13.4.0-strip -S"
+striplib="x86_64-apple-darwin13.4.0-strip -x"
 
 
 # The linker used to build libraries.
-LD="/Users/kamil/anaconda3/bin/x86_64-apple-darwin13.4.0-ld"
+LD="x86_64-apple-darwin13.4.0-ld"
 
 # How to create reloadable object files.
 reload_flag=" -r"
@@ -315,7 +315,7 @@ reload_cmds="\$LTCC \$LTCFLAGS -nostdlib \$wl-r -o \$output\$reload_objs"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs~\$RANLIB \$tool_oldlib"
 
 # A language specific compiler.
-CC="gcc"
+CC="x86_64-apple-darwin13.4.0-clang"
 
 # Is the compiler the GNU compiler?
 with_gcc=yes
@@ -345,7 +345,7 @@ allow_libtool_libs_with_static_runtimes=no
 export_dynamic_flag_spec=""
 
 # Compiler flag to generate shared objects directly from archives.
-whole_archive_flag_spec=""
+whole_archive_flag_spec="\`for conv in \$convenience\\\"\\\"; do test  -n \\\"\$conv\\\" && new_convenience=\\\"\$new_convenience \$wl-force_load,\$conv\\\"; done; func_echo_all \\\"\$new_convenience\\\"\`"
 
 # Whether the compiler copes with passing no objects directly.
 compiler_needs_object="no"
@@ -357,13 +357,13 @@ old_archive_from_new_cmds=""
 old_archive_from_expsyms_cmds=""
 
 # Commands used to build a shared archive.
-archive_cmds="\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring \$single_module~\$DSYMUTIL \$lib || :"
-archive_expsym_cmds="sed 's|^|_|' < \$export_symbols > \$output_objdir/\$libname-symbols.expsym~\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring \$single_module \$wl-exported_symbols_list,\$output_objdir/\$libname-symbols.expsym~\$DSYMUTIL \$lib || :"
+archive_cmds="\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring \$single_module"
+archive_expsym_cmds="sed 's|^|_|' < \$export_symbols > \$output_objdir/\$libname-symbols.expsym~\$CC -dynamiclib \$allow_undefined_flag -o \$lib \$libobjs \$deplibs \$compiler_flags -install_name \$rpath/\$soname \$verstring \$single_module \$wl-exported_symbols_list,\$output_objdir/\$libname-symbols.expsym"
 
 # Commands used to build a loadable module if different from building
 # a shared archive.
-module_cmds="\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags~\$DSYMUTIL \$lib || :"
-module_expsym_cmds="sed -e 's|^|_|' < \$export_symbols > \$output_objdir/\$libname-symbols.expsym~\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags \$wl-exported_symbols_list,\$output_objdir/\$libname-symbols.expsym~\$DSYMUTIL \$lib || :"
+module_cmds="\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags"
+module_expsym_cmds="sed -e 's|^|_|' < \$export_symbols > \$output_objdir/\$libname-symbols.expsym~\$CC \$allow_undefined_flag -o \$lib -bundle \$libobjs \$deplibs \$compiler_flags \$wl-exported_symbols_list,\$output_objdir/\$libname-symbols.expsym"
 
 # Whether we are building with GNU ld or not.
 with_gnu_ld="no"

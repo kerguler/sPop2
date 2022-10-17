@@ -192,6 +192,7 @@ char spop2_sdpopadd(spop2, spop2, char, sdnum *);
 void spop2_print(spop2);
 void spop2_retrieve(spop2, char, double *, double *, unsigned int *);
 char spop2_iterate(spop2, double, double, double, char);
+unsigned int spop2_nqunit(spop2);
 
 /* ******************************* */
 

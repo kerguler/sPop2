@@ -234,6 +234,16 @@ char spop2_sdpopadd(spop2 pop, spop2 add, char devtable, sdnum *size) {
     return 0;
 }
 
+unsigned int spop2_nqunit(spop2 s) {
+    unsigned int num = 0;
+    if (!s) return num;
+    qunit p, tmp;
+    HASH_ITER(hh, s->devc, p, tmp) {
+        ++num;
+    }
+    return num;
+}
+
 void spop2_print(spop2 s) {
     if (!s) return;
     printf("# m");
